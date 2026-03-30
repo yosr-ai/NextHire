@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ===================== FORMULAIRE PUBLIER UNE OFFRE (SPRINT 2) ===================== -->
+<div class="auth-wrapper">
+    <div class="auth-card" style="max-width:620px;">
+        <div style="text-align:center; margin-bottom:2rem;">
+            <div style="font-size:3rem; margin-bottom:1rem;">📝</div>
+            <h2>Publier une offre</h2>
+            <p class="subtitle">Remplissez les informations du poste à pourvoir</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('publier_offre') }}">
+
+            <!-- Titre du poste -->
+            <div class="form-group">
+                <label class="form-control-label" for="titre">Titre du poste *</label>
+                <input type="text" name="titre" id="titre" class="form-control" required
+                       placeholder="Ex : Développeur Python Junior">
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label class="form-control-label" for="description">Description du poste *</label>
+                <!--
+                    rows="6" = hauteur initiale du champ texte : 6 lignes
+                    required  = obligatoire
+                -->
+                <textarea name="description" id="description" rows="6" class="form-control" required
+                          placeholder="Décrivez le poste, les responsabilités, le profil recherché..."></textarea>
+            </div>
+
+            <!-- Localisation -->
+            <div class="form-group">
+                <label class="form-control-label" for="localisation">Localisation</label>
+                <input type="text" name="localisation" id="localisation" class="form-control"
+                       placeholder="Ex : Casablanca, Rabat, Télétravail...">
+            </div>
+
+            <!-- Type de contrat et Salaire (2 colonnes) -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div class="form-group">
+                    <label class="form-control-label" for="type_contrat">Type de contrat</label>
+                    <select name="type_contrat" id="type_contrat" class="form-control form-select">
+                        <option value="">-- Choisir --</option>
+                        <option value="CDI">CDI</option>
+                        <option value="CDD">CDD</option>
+                        <option value="Stage">Stage</option>
+                        <option value="Alternance">Alternance</option>
+                        <option value="Freelance">Freelance</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-control-label" for="salaire">Salaire</label>
+                    <input type="text" name="salaire" id="salaire" class="form-control"
+                           placeholder="Ex : 8 000 MAD/mois">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">✅ Publier l'offre</button>
+            <a href="{{ url_for('tableau_de_bord') }}" class="btn btn-outline btn-block" style="margin-top:1rem;">
+                Annuler
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}

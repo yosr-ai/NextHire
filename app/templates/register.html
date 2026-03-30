@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ===================== PAGE D'INSCRIPTION (SPRINT 1) ===================== -->
+<div class="auth-wrapper">
+    <div class="auth-card" style="max-width: 540px;">
+        <div style="text-align:center; margin-bottom:2rem;">
+            <div style="font-size:3rem; margin-bottom:1rem;">👤</div>
+            <h2>Créer un compte</h2>
+            <p class="subtitle">Rejoignez la plateforme NextHire</p>
+        </div>
+
+        <!--
+            action="{{ url_for('inscription') }}" → envoie les données à la route /register
+            method="POST" → envoi sécurisé (les données n'apparaissent pas dans l'URL)
+        -->
+        <form method="POST" action="{{ url_for('inscription') }}">
+
+            <!-- Nom d'utilisateur -->
+            <div class="form-group">
+                <label class="form-control-label" for="username">Nom d'utilisateur</label>
+                <!--
+                    name="username" → Flask lira request.form['username']
+                    required → le champ est obligatoire (validation HTML)
+                -->
+                <input type="text" name="username" id="username" class="form-control"
+                       placeholder="Ex : alice_dupont" required
+                       minlength="3" maxlength="50">
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+                <label class="form-control-label" for="email">Adresse Email</label>
+                <input type="email" name="email" id="email" class="form-control"
+                       placeholder="alice@email.com" required>
+            </div>
+
+            <!-- Téléphone (optionnel) -->
+            <div class="form-group">
+                <label class="form-control-label" for="telephone">Téléphone (optionnel)</label>
+                <input type="tel" name="telephone" id="telephone" class="form-control"
+                       placeholder="Ex : 0612345678">
+            </div>
+
+            <!-- Mot de passe -->
+            <div class="form-group">
+                <label class="form-control-label" for="password">Mot de passe</label>
+                <input type="password" name="password" id="password" class="form-control"
+                       placeholder="Minimum 6 caractères" required minlength="6">
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">
+                    🔒 Votre mot de passe sera chiffré (haché) avant d'être sauvegardé.
+                </p>
+            </div>
+
+            <!-- Choix du rôle -->
+            <div class="form-group">
+                <label class="form-control-label" for="role">Je suis...</label>
+                <!--
+                    <select> = une liste déroulante.
+                    name="role" → Flask lira request.form['role']
+                    Chaque <option value="X"> envoie la valeur X au serveur.
+                -->
+                <select name="role" id="role" class="form-control form-select" required>
+                    <option value="" disabled selected>-- Choisissez votre rôle --</option>
+                    <option value="Candidat">👤 Candidat — Je cherche un emploi</option>
+                    <option value="Recruteur">🎯 Recruteur — Je publie des offres</option>
+                    <option value="RH">🏢 RH — Je supervise le recrutement</option>
+                    <option value="Admin">🛡️ Admin — Je gère la plateforme</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Créer mon compte</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Déjà un compte ? <a href="{{ url_for('connexion') }}">Se connecter</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

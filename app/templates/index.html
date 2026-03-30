@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- DÉCORATION D'ARRIÈRE-PLAN -->
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<!-- ===================== SECTION HÉROS ===================== -->
+<section class="hero reveal-up" style="padding: 8rem 0 4rem;">
+    <div class="hero-content">
+        <div class="hero-badge float-anim" style="background: rgba(194, 168, 147, 0.15); color: var(--primary-dark); padding: 0.5rem 1.25rem; border-radius: 99px; display: inline-block; margin-bottom: 2rem; font-weight: 700; border: 1px solid var(--border-light); backdrop-filter: blur(5px);">
+            ✨ L'excellence du recrutement 2.0
+        </div>
+        <h1 style="max-width: 900px; margin: 0 auto 1.5rem; font-size: 3.5rem;">Propulsez votre <span>recrutement</span> vers de nouveaux sommets</h1>
+        <p style="font-size: 1.1rem; max-width: 800px; line-height: 1.6; opacity: 0.9;">La plateforme intelligente qui transforme votre processus d'embauche. Automatisez, collaborez et recrutez les meilleurs talents en un temps record.</p>
+
+        {% if not session.get('utilisateur_id') %}
+            <div class="hero-actions mt-4">
+                <a href="{{ url_for('inscription') }}" class="btn btn-primary btn-large pulse-glow" style="padding: 1rem 2.5rem; font-size: 1.1rem;">Commencez maintenant</a>
+                <a href="{{ url_for('liste_offres') }}" class="btn btn-outline btn-large" style="padding: 1rem 2.5rem; border-width: 2px; font-size: 1.1rem;">Découvrir les offres</a>
+            </div>
+        {% else %}
+            <div class="hero-actions mt-4">
+                <a href="{{ url_for('tableau_de_bord') }}" class="btn btn-primary btn-large pulse-glow" style="padding: 1rem 2.5rem; font-size: 1.1rem;">Accéder au Dashboard</a>
+                <a href="{{ url_for('liste_offres') }}" class="btn btn-outline btn-large" style="padding: 1rem 2.5rem; font-size: 1.1rem;">Rechercher des talents</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ===================== SECTION LOGOS (SOCIAL PROOF) ===================== -->
+<section class="reveal-up" style="padding: 3rem 0; text-align: center; opacity: 0.7; animation-delay: 0.2s;">
+    <p style="text-transform: uppercase; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.2em; color: var(--text-muted); margin-bottom: 2rem;">Ils transforment leur RH avec NextHire</p>
+    <div class="container" style="display: flex; justify-content: center; gap: 4rem; flex-wrap: wrap; align-items: center; filter: grayscale(1);">
+        <span style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text-muted);">TECH<span>CORP</span></span>
+        <span style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text-muted);">GLOBAL<span>INN</span></span>
+        <span style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text-muted);">SOFT<span>LY</span></span>
+        <span style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text-muted);">FUTURE<span>HR</span></span>
+    </div>
+</section>
+
+<!-- ===================== SECTION AVANTAGES / PHOTOS ===================== -->
+<section class="advantages-section" style="padding: 8rem 24px;">
+    <div class="container">
+        <div class="reveal-up" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; margin-bottom: 8rem; animation-delay: 0.4s;">
+            <div style="position: relative;">
+                <div style="position: absolute; top: -20px; left: -20px; width: 100px; height: 100px; background: var(--secondary); border-radius: 20px; z-index: -1; opacity: 0.5;"></div>
+                <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=800"
+                     alt="Recrutement Premium"
+                     style="width: 100%; max-width: 450px; display: block; margin: 0 auto; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-premium); border: 8px solid #fff;">
+            </div>
+            <div>
+                <h2 style="font-size: 2.75rem; line-height: 1.1; margin-bottom: 2rem;">Une gestion <span>intelligente</span> de vos candidatures</h2>
+                <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 3rem;">Fini les tableaux Excel interminables. Centralisez toutes vos informations sur une interface intuitive conçue pour la performance et la collaboration d'équipe.</p>
+                
+                <div style="display: grid; gap: 2rem;">
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+                        <div style="background: var(--secondary); padding: 1rem; border-radius: 15px; font-size: 1.5rem;">📈</div>
+                        <div>
+                            <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Analyses en temps réel</strong>
+                            <p style="color: var(--text-muted); font-size: 0.95rem;">Suivez vos KPIs et optimisez vos processus de recrutement avec des données précises et exploitables.</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+                        <div style="background: var(--secondary); padding: 1rem; border-radius: 15px; font-size: 1.5rem;">🤝</div>
+                        <div>
+                            <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Collaboration fluide</strong>
+                            <p style="color: var(--text-muted); font-size: 0.95rem;">Partagez vos impressions et évaluez les candidats en équipe pour une meilleure prise de décision collective.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="reveal-up" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6rem; align-items: center; animation-delay: 0.6s;">
+            <div>
+                <h2 style="font-size: 2.75rem; line-height: 1.1; margin-bottom: 2rem;">Trouvez l'opportunité <span>idéale</span></h2>
+                <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 3rem;">Pour les candidats, NextHire offre une expérience de candidature simplifiée et transparente. Suivez l'évolution de votre dossier en direct.</p>
+                <div style="display: grid; gap: 2rem;">
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+                        <div style="background: var(--secondary); padding: 1rem; border-radius: 15px; font-size: 1.5rem;">🎯</div>
+                        <div>
+                            <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Ciblage de carrière</strong>
+                            <p style="color: var(--text-muted); font-size: 0.95rem;">Accédez aux meilleures offres correspondantes à votre profil et vos ambitions professionnelles.</p>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+                        <div style="background: var(--secondary); padding: 1rem; border-radius: 15px; font-size: 1.5rem;">⚡</div>
+                        <div>
+                            <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Candidature instantanée</strong>
+                            <p style="color: var(--text-muted); font-size: 0.95rem;">Postulez rapidement et gérez tous vos entretiens depuis un espace personnel dédié et sécurisé.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="order: -1; position: relative;">
+                <div style="position: absolute; bottom: -20px; right: -20px; width: 100px; height: 100px; background: var(--secondary); border-radius: 20px; z-index: -1; opacity: 0.5;"></div>
+                <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&q=80&w=800"
+                     alt="Opportunités Carrière"
+                     style="width: 100%; max-width: 450px; display: block; margin: 0 auto; border-radius: var(--border-radius-lg); box-shadow: var(--shadow-premium); border: 8px solid #fff;">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== FONCTIONNALITÉS ===================== -->
+<section class="reveal-up" style="padding: 6rem 0; background: rgba(194,168,147,0.03); border-radius: 60px; margin: 4rem 20px; animation-delay: 0.8s;">
+    <div class="container">
+        <div class="features-header text-center" style="margin-bottom: 4rem;">
+            <h2 style="font-size: 2.75rem; margin-bottom: 1rem;">Conçu pour tous vos besoins RH</h2>
+            <p style="color: var(--text-muted); max-width: 700px; margin: 0 auto; font-size: 1.1rem;">Des outils puissants et simples pour chaque étape de votre cycle de recrutement.</p>
+        </div>
+
+        <div class="features">
+            <div class="feature-card" style="background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border: 1px solid var(--glass-border);">
+                <div class="feature-icon" style="background: var(--secondary); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 18px; margin-bottom: 1.5rem;">🛡️</div>
+                <h3 style="font-size: 1.35rem;">Espace Sécurisé</h3>
+                <p style="font-size: 0.95rem;">Environnement hautement sécurisé pour vos données sensibles, avec rôles personnalisés pour chaque intervenant.</p>
+                <ul class="feature-list">
+                    <li>Accès par rôle (Admin, RH, Recruteur)</li>
+                    <li>Protection des données personnelles</li>
+                    <li>Sessions d'utilisateurs isolées</li>
+                </ul>
+            </div>
+            <div class="feature-card" style="background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid var(--glass-border);">
+                <div class="feature-icon" style="background: var(--secondary); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 18px; margin-bottom: 1.5rem;">📊</div>
+                <h3 style="font-size: 1.35rem;">Reporting Stratégique</h3>
+                <p style="font-size: 0.95rem;">Prenez des décisions basées sur les données grâce à nos tableaux de bord analytiques et prévisionnels.</p>
+                <ul class="feature-list">
+                    <li>Taux de conversion candidatures</li>
+                    <li>Délais de recrutement moyens</li>
+                    <li>Popularité des offres d'emploi</li>
+                </ul>
+            </div>
+            <div class="feature-card" style="background: rgba(255,255,255,0.8); backdrop-filter: blur(10px); border: 1px solid var(--glass-border);">
+                <div class="feature-icon" style="background: var(--secondary); width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 18px; margin-bottom: 1.5rem;">📅</div>
+                <h3 style="font-size: 1.35rem;">Planification Agendas</h3>
+                <p style="font-size: 0.95rem;">Synchronisez vos entretiens et ne manquez plus aucun talent grâce à nos outils de gestion calendaire.</p>
+                <ul class="feature-list">
+                    <li>Entretiens physiques ou visio</li>
+                    <li>Rappels automatiques au candidat</li>
+                    <li>Notes d'évaluation collaboratives</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===================== CTA FINAL ===================== -->
+<section class="reveal-up container" style="padding: 6rem 0; text-align: center; animation-delay: 1s;">
+    <div style="background: var(--gradient-primary); padding: 5rem; border-radius: 40px; color: var(--text-light); box-shadow: var(--shadow-premium);">
+        <h2 style="font-size: 2.75rem; margin-bottom: 1.5rem; -webkit-text-fill-color: var(--text-light);">Rejoignez l'avenir du recrutement</h2>
+        <p style="font-size: 1.1rem; margin-bottom: 3rem; opacity: 0.9;">Inscrivez-vous dès aujourd'hui et commencez à bâtir vos équipes de rêve.</p>
+        <a href="{{ url_for('inscription') }}" class="btn btn-outline btn-large" style="background: white; color: var(--primary) !important; border: none; font-size: 1.1rem; padding: 1rem 3rem;">Créer un compte gratuitement</a>
+    </div>
+</section>
+{% endblock %}

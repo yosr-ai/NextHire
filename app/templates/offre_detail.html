@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ===================== DÉTAIL D'UNE OFFRE (SPRINT 2 + 3) ===================== -->
+<section style="padding:3rem 0; max-width:800px; margin:0 auto;">
+
+    <!-- Bouton retour -->
+    <a href="{{ url_for('liste_offres') }}" class="btn btn-outline" style="margin-bottom:2rem; display:inline-flex;">
+        ← Retour aux offres
+    </a>
+
+    <!-- Carte principale de l'offre -->
+    <div class="offre-detail-card">
+
+        <!-- Badge contrat + date -->
+        <div style="display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap; gap:1rem;">
+            <span class="badge-contrat badge-{{ offre.type_contrat | lower | replace(' ','') }}">
+                {{ offre.type_contrat or 'Type non précisé' }}
+            </span>
+            <span style="color:var(--text-muted); font-size:0.9rem;">
+                Publiée le {{ offre.date_creation[:10] }}
+            </span>
+        </div>
+
+        <!-- Titre de l'offre -->
+        <h1 style="font-size:2.2rem; margin:1rem 0 0.5rem; color:var(--text-main);">
+            {{ offre.titre }}
+        </h1>
+
+        <!-- Informations recruteur -->
+        <p style="color:var(--text-muted); margin-bottom:1.5rem;">
+            👤 Publié par <strong>{{ offre.recruteur_nom }}</strong>
+        </p>
+
+        <!-- Tags : lieu et salaire -->
+        <div class="offre-details" style="margin-bottom:2rem;">
+            {% if offre.localisation %}
+                <span class="offre-tag">📍 {{ offre.localisation }}</span>
+            {% endif %}
+            {% if offre.salaire %}
+                <span class="offre-tag">💰 {{ offre.salaire }}</span>
+            {% endif %}
+            <span class="offre-tag">
+                {% if offre.statut == 'Ouverte' %}🟢 Offre ouverte{% else %}🔴 Offre fermée{% endif %}
+            </span>
+        </div>
+
+        <!-- Ligne de séparation -->
+        <hr style="border:0; border-top:1px solid var(--border-light); margin-bottom:2rem;">
+
+        <!-- Description complète -->
+        <h3 style="font-size:1.25rem; margin-bottom:1rem;">📄 Description du poste</h3>
+        <!--
+            white-space: pre-wrap = respecte les sauts de ligne dans le texte
+        -->
+        <p style="line-height:1.8; color:var(--text-main); white-space:pre-wrap;">{{ offre.description }}</p>
+
+        <hr style="border:0; border-top:1px solid var(--border-light); margin:2rem 0;">
+
+        <!-- ===================== SECTION CANDIDATURE (SPRINT 3) ===================== -->
+        {% if session.get('role') == 'Candidat' %}
+
+            {% if offre.statut == 'Ouverte' %}
+
+                {% if deja_postule %}
+                    <!-- Le candidat a déjà postulé : on affiche un message au lieu du formulaire -->
+                    <div class="alert alert-success">
+                        ✅ Vous avez déjà postulé à cette offre. Suivez l'état de votre candidature dans votre tableau de bord.
+                    </div>
+                    <a href="{{ url_for('tableau_de_bord') }}" class="btn btn-outline">
+                        Voir mes candidatures →
+                    </a>
+
+                {% else %}
+                    <!-- Formulaire de candidature -->
+                    <div class="candidature-form-section">
+                        <h3 style="font-size:1.25rem; margin-bottom:0.5rem;">📨 Postuler à cette offre</h3>
+                        <p style="color:var(--text-muted); margin-bottom:1.5rem;">
+                            Votre profil/CV sera automatiquement joint. Vous pouvez ajouter une lettre de motivation.
+                        </p>
+
+                        <!--
+                            action="{{ url_for('postuler', offre_id=offre.id) }}"
+                            → Envoie les données à la route /postuler/<offre_id> via POST
+                        -->
+                        <form method="POST" action="{{ url_for('postuler', offre_id=offre.id) }}">
+                            <div class="form-group">
+                                <label class="form-control-label" for="lettre">
+                                    Lettre de motivation (optionnel)
+                                </label>
+                                <textarea
+                                    name="lettre_motivation"
+                                    id="lettre"
+                                    rows="6"
+                                    class="form-control"
+                                    placeholder="Ex : Madame, Monsieur,&#10;Je suis très intéressé(e) par ce poste car...">
+                                </textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary btn-block">
+                                🚀 Envoyer ma candidature
+                            </button>
+                        </form>
+                    </div>
+                {% endif %}
+
+            {% else %}
+                <!-- Offre fermée : pas de bouton postuler -->
+                <div class="alert alert-info">
+                    ℹ️ Cette offre est actuellement fermée aux candidatures.
+                </div>
+            {% endif %}
+
+        {% elif not session.get('utilisateur_id') %}
+            <!-- Pas connecté : invitation à se connecter -->
+            <div class="alert alert-info">
+                ℹ️ <a href="{{ url_for('connexion') }}" style="color:var(--primary);">Connectez-vous</a>
+                en tant que Candidat pour postuler à cette offre.
+            </div>
+
+        {% else %}
+            <!-- Connecté mais pas Candidat (ex: Recruteur) -->
+            <div class="alert alert-info">
+                ℹ️ Seuls les candidats peuvent postuler aux offres.
+            </div>
+        {% endif %}
+
+    </div>
+</section>
+{% endblock %}

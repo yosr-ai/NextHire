@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ===================== PAGE DE CONNEXION (SPRINT 1) ===================== -->
+<!--
+    GET  → L'utilisateur arrive sur la page, on affiche le formulaire.
+    POST → Il clique sur "Se connecter", les données partent vers Flask (route /login).
+    method="POST" = envoyer les données au serveur (ne pas les afficher dans l'URL).
+-->
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div style="text-align:center; margin-bottom:2rem;">
+            <div style="font-size:3rem; margin-bottom:1rem;">🔐</div>
+            <h2>Connexion</h2>
+            <p class="subtitle">Accédez à votre espace personnel</p>
+        </div>
+
+        <!-- Le formulaire envoie ses données à la route /login via POST -->
+        <form method="POST" action="{{ url_for('connexion') }}">
+
+            <!-- Champ Email -->
+            <div class="form-group">
+                <label class="form-control-label" for="email">Adresse Email</label>
+                <!--
+                    name="email" → le nom que Flask utilise pour lire cette valeur
+                    (request.form['email'] dans app.py)
+                -->
+                <input type="email" name="email" id="email" class="form-control"
+                       placeholder="exemple@email.com" required>
+            </div>
+
+            <!-- Champ Mot de passe -->
+            <div class="form-group">
+                <label class="form-control-label" for="password">Mot de passe</label>
+                <input type="password" name="password" id="password" class="form-control"
+                       placeholder="••••••••" required>
+            </div>
+
+            <!-- Bouton d'envoi du formulaire -->
+            <button type="submit" class="btn btn-primary btn-block">Se connecter</button>
+        </form>
+
+        <!-- Lien vers l'inscription si pas encore de compte -->
+        <div class="auth-footer">
+            <p>Pas encore de compte ? <a href="{{ url_for('inscription') }}">S'inscrire gratuitement</a></p>
+        </div>
+
+        <!-- Comptes de démo pour la présentation -->
+        <div class="demo-accounts">
+            <p style="font-size:0.8rem; color: var(--text-muted); text-align:center; margin-bottom:0.75rem; font-weight:600;">
+                🧪 Comptes de démonstration :
+            </p>
+            <div class="demo-grid">
+                <div class="demo-item"><strong>Admin</strong><br>admin@nexthire.com / admin123</div>
+                <div class="demo-item"><strong>RH</strong><br>marie@nexthire.com / rh123</div>
+                <div class="demo-item"><strong>Recruteur</strong><br>recruteur@nexthire.com / recruteur123</div>
+                <div class="demo-item"><strong>Candidat</strong><br>alice@email.com / alice123</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

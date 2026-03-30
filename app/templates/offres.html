@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ===================== PAGE DES OFFRES D'EMPLOI ===================== -->
+<section style="padding: 3rem 0;">
+
+    <!-- En-tête de la page -->
+    <div style="margin-bottom:2rem;">
+        <h1 style="font-size:2.5rem; color:var(--text-main);">📋 Offres d'emploi</h1>
+        <p style="color:var(--text-muted); margin-top:0.5rem;">
+            {{ offres|length }} offre(s) disponible(s) en ce moment
+        </p>
+    </div>
+
+    <!-- ===================== BARRE DE RECHERCHE / FILTRES ===================== -->
+    <!--
+        method="GET" → les filtres s'ajoutent dans l'URL (?recherche=python&contrat=CDI)
+        C'est plus pratique : l'utilisateur peut copier/partager le lien avec les filtres déjà appliqués.
+    -->
+    <form method="GET" action="{{ url_for('liste_offres') }}" class="search-form">
+        <div class="search-row">
+            <!-- Champ de recherche textuelle -->
+            <input type="text"
+                   name="recherche"
+                   class="form-control search-input"
+                   placeholder="🔍 Rechercher un poste, une ville..."
+                   value="{{ recherche }}">
+
+            <!-- Filtre par type de contrat -->
+            <select name="contrat" class="form-control form-select search-select">
+                <option value="">Tous les contrats</option>
+                <option value="CDI"        {% if contrat == 'CDI' %}selected{% endif %}>CDI</option>
+                <option value="CDD"        {% if contrat == 'CDD' %}selected{% endif %}>CDD</option>
+                <option value="Stage"      {% if contrat == 'Stage' %}selected{% endif %}>Stage</option>
+                <option value="Alternance" {% if contrat == 'Alternance' %}selected{% endif %}>Alternance</option>
+                <option value="Freelance"  {% if contrat == 'Freelance' %}selected{% endif %}>Freelance</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">Filtrer</button>
+            {% if recherche or contrat %}
+                <a href="{{ url_for('liste_offres') }}" class="btn btn-outline">Réinitialiser</a>
+            {% endif %}
+        </div>
+    </form>
+
+    <!-- ===================== LISTE DES OFFRES ===================== -->
+    {% if offres %}
+        <div class="offres-grid">
+            {% for offre in offres %}
+            <!--
+                C'est une boucle Jinja2 : pour chaque offre dans la liste "offres",
+                on affiche une carte. {{ offre.titre }} = valeur de la colonne "titre".
+            -->
+            <div class="offre-card">
+                <!-- En-tête de la carte : badge de contrat -->
+                <div class="offre-card-header">
+                    <span class="badge-contrat badge-{{ offre.type_contrat | lower | replace(' ','') }}">
+                        {{ offre.type_contrat or 'Non précisé' }}
+                    </span>
+                    <!-- Afficher "Nouveau" si l'offre date de moins de 7 jours -->
+                    <span class="offre-date">{{ offre.date_creation[:10] }}</span>
+                </div>
+
+                <!-- Titre et recruteur -->
+                <h3 class="offre-titre">{{ offre.titre }}</h3>
+                <p class="offre-recruteur">👤 Publié par {{ offre.recruteur_nom }}</p>
+
+                <!-- Détails (lieu, salaire) -->
+                <div class="offre-details">
+                    {% if offre.localisation %}
+                        <span class="offre-tag">📍 {{ offre.localisation }}</span>
+                    {% endif %}
+                    {% if offre.salaire %}
+                        <span class="offre-tag">💰 {{ offre.salaire }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- Description courte : les 120 premiers caractères -->
+                <p class="offre-description">
+                    {{ offre.description[:150] }}{% if offre.description|length > 150 %}...{% endif %}
+                </p>
+
+                <!-- Bouton Voir le détail -->
+                <a href="{{ url_for('detail_offre', offre_id=offre.id) }}" class="btn btn-primary offre-btn">
+                    Voir l'offre →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <!-- Message si aucune offre ne correspond aux filtres -->
+        <div class="empty-state">
+            <div style="font-size:4rem;">🔍</div>
+            <h3>Aucune offre trouvée</h3>
+            <p>Essayez d'autres mots-clés ou supprimez les filtres.</p>
+            <a href="{{ url_for('liste_offres') }}" class="btn btn-outline" style="margin-top:1rem;">Voir toutes les offres</a>
+        </div>
+    {% endif %}
+
+</section>
+{% endblock %}

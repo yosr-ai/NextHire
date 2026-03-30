@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ===================== TABLEAU DE BORD ===================== -->
+<!--
+    Ce fichier est le COEUR de la plateforme.
+    Le contenu change selon le role de l'utilisateur connecte.
+    On utilise des blocs conditionnels Jinja2 (if role == '...') pour cela.
+-->
+<div class="dashboard-wrapper">
+
+    <!-- ============================================================ -->
+    <!-- EN-TÊTE COMMUN À TOUS LES RÔLES                             -->
+    <!-- ============================================================ -->
+    <div class="dashboard-header">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <div>
+                <h2>Bonjour, {{ nom }} 👋</h2>
+                <p>Votre espace 
+                    <span class="badge-role badge-{{ role | lower | replace(' ','') }}">{{ role }}</span>
+                </p>
+            </div>
+            <!-- Actions rapides selon le rôle -->
+            {% if role == 'Recruteur' %}
+                <a href="{{ url_for('publier_offre') }}" class="btn btn-primary">
+                    + Publier une offre
+                </a>
+            {% elif role == 'Candidat' %}
+                <a href="{{ url_for('liste_offres') }}" class="btn btn-primary">
+                    🔍 Voir les offres
+                </a>
+            {% elif role in ['RH', 'Admin'] %}
+                <a href="{{ url_for('statistiques') }}" class="btn btn-primary">
+                    📊 Voir les statistiques
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- SPRINT 5 : CARTES DE STATISTIQUES (communes à tous les rôles) -->
+    <!-- ============================================================ -->
+    {% if donnees.stats %}
+    <div class="dashboard-stats">
+
+        {% if role == 'Candidat' %}
+            <div class="stat-card"><h4>Candidatures envoyées</h4><div class="stat-value">{{ donnees.stats.total }}</div></div>
+            <div class="stat-card"><h4>🟡 En attente</h4><div class="stat-value" style="color:#f59e0b;">{{ donnees.stats.en_attente }}</div></div>
+            <div class="stat-card"><h4>🟢 Acceptées</h4><div class="stat-value" style="color:#10b981;">{{ donnees.stats.accepte }}</div></div>
+            <div class="stat-card"><h4>🔴 Refusées</h4><div class="stat-value" style="color:#ef4444;">{{ donnees.stats.refuse }}</div></div>
+
+        {% elif role == 'Recruteur' %}
+            <div class="stat-card"><h4>Offres publiées</h4><div class="stat-value">{{ donnees.stats.total_offres }}</div></div>
+            <div class="stat-card"><h4>Candidatures reçues</h4><div class="stat-value">{{ donnees.stats.total_cands }}</div></div>
+            <div class="stat-card"><h4>🟡 En attente</h4><div class="stat-value" style="color:#f59e0b;">{{ donnees.stats.en_attente }}</div></div>
+            <div class="stat-card"><h4>📅 Entretiens</h4><div class="stat-value" style="color:#6366f1;">{{ donnees.stats.entretiens }}</div></div>
+
+        {% elif role == 'RH' %}
+            <div class="stat-card"><h4>Candidats inscrits</h4><div class="stat-value">{{ donnees.stats.total_candidats }}</div></div>
+            <div class="stat-card"><h4>Offres publiées</h4><div class="stat-value">{{ donnees.stats.total_offres }}</div></div>
+            <div class="stat-card"><h4>Total candidatures</h4><div class="stat-value">{{ donnees.stats.total_candidatures }}</div></div>
+            <div class="stat-card"><h4>📅 Entretiens planifiés</h4><div class="stat-value" style="color:#6366f1;">{{ donnees.stats.entretiens_planifies }}</div></div>
+
+        {% elif role == 'Admin' %}
+            <div class="stat-card"><h4>Utilisateurs</h4><div class="stat-value">{{ donnees.stats.total_users }}</div></div>
+            <div class="stat-card"><h4>Offres d'emploi</h4><div class="stat-value">{{ donnees.stats.total_offres }}</div></div>
+            <div class="stat-card"><h4>Candidatures</h4><div class="stat-value">{{ donnees.stats.total_cands }}</div></div>
+            <div class="stat-card"><h4>Entretiens</h4><div class="stat-value">{{ donnees.stats.total_entretiens }}</div></div>
+        {% endif %}
+
+    </div>
+    {% endif %}
+
+
+    <!-- ================================================================ -->
+    <!-- SECTION CANDIDAT                                                  -->
+    <!-- ================================================================ -->
+    {% if role == 'Candidat' %}
+
+        <!-- Mon Profil / CV -->
+        <div class="content-panel" style="margin-bottom:2rem;">
+            <h3>👤 Mon Profil & CV</h3>
+            <p style="color:var(--text-muted); margin-bottom:1.5rem;">
+                Ce texte représente votre CV sur la plateforme. Rédigez vos compétences, formations et expériences.
+            </p>
+            <!--
+                SPRINT 3 : Mise à jour du profil
+                action="/ajouter_cv" → route Flask qui met à jour la base de données
+            -->
+            <form method="POST" action="{{ url_for('ajouter_cv') }}">
+                <div class="form-group">
+                    <label class="form-control-label">Téléphone</label>
+                    <input type="tel" name="telephone" class="form-control"
+                           placeholder="Ex : 0600000000"
+                           value="{{ donnees.telephone }}">
+                </div>
+                <div class="form-group">
+                    <label class="form-control-label">Mon CV / Ma présentation</label>
+                    <!--
+                        {{ donnees.profil_cv }} : affiche le texte déjà sauvegardé
+                        (s'il est vide, le textarea sera vide aussi)
+                    -->
+                    <textarea name="cv_texte" rows="7" class="form-control"
+                              placeholder="Ex : Je suis étudiant(e) en informatique...&#10;Compétences : Python, HTML, CSS...&#10;Expérience : Stage chez XYZ...">{{ donnees.profil_cv }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">💾 Mettre à jour mon profil</button>
+            </form>
+        </div>
+
+        <!-- Mes Candidatures -->
+        <div class="content-panel">
+            <h3>📨 Mes Candidatures</h3>
+
+            {% if donnees.candidatures %}
+                <div class="table-wrapper" style="margin-top:1.5rem;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Offre</th>
+                                <th>Localisation</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for c in donnees.candidatures %}
+                            <tr>
+                                <td><strong>{{ c.offre_titre }}</strong></td>
+                                <td>{{ c.localisation or '—' }}</td>
+                                <td>{{ c.type_contrat or '—' }}</td>
+                                <td>{{ c.date_postulation[:10] }}</td>
+                                <td>
+                                    <!-- Badge coloré selon le statut -->
+                                    <span class="badge-statut badge-{{ c.statut | lower | replace(' ','_') }}">
+                                        {% if c.statut == 'Accepté' %}✅
+                                        {% elif c.statut == 'Refusé' %}❌
+                                        {% elif c.statut == 'Entretien planifié' %}📅
+                                        {% else %}⏳
+                                        {% endif %}
+                                        {{ c.statut }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state" style="padding:2rem;">
+                    <div style="font-size:3rem;">📭</div>
+                    <h4>Aucune candidature pour l'instant</h4>
+                    <a href="{{ url_for('liste_offres') }}" class="btn btn-primary" style="margin-top:1rem;">
+                        Parcourir les offres →
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+
+    <!-- ================================================================ -->
+    <!-- SECTION RECRUTEUR                                                 -->
+    <!-- ================================================================ -->
+    {% elif role == 'Recruteur' %}
+
+        <!-- Mes Offres publiées -->
+        <div class="content-panel" style="margin-bottom:2rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem; flex-wrap:wrap; gap:1rem;">
+                <h3>📋 Mes Offres d'emploi</h3>
+                <a href="{{ url_for('publier_offre') }}" class="btn btn-primary">+ Nouvelle offre</a>
+            </div>
+
+            {% if donnees.offres %}
+                <div class="offres-list">
+                {% for offre in donnees.offres %}
+                    <div class="offre-list-item">
+                        <div class="offre-list-info">
+                            <h4>{{ offre.titre }}</h4>
+                            <div class="offre-details" style="margin-top:0.5rem;">
+                                {% if offre.localisation %}<span class="offre-tag">📍 {{ offre.localisation }}</span>{% endif %}
+                                {% if offre.type_contrat %}<span class="offre-tag">{{ offre.type_contrat }}</span>{% endif %}
+                                <span class="badge-statut badge-{{ offre.statut | lower }}">
+                                    {{ '🟢' if offre.statut == 'Ouverte' else '🔴' }} {{ offre.statut }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="offre-list-actions">
+                            <a href="{{ url_for('detail_offre', offre_id=offre.id) }}" class="btn btn-outline" style="padding:0.5rem 1rem; font-size:0.85rem;">Voir</a>
+                            <a href="{{ url_for('modifier_offre', offre_id=offre.id) }}" class="btn btn-outline" style="padding:0.5rem 1rem; font-size:0.85rem;">✏️</a>
+                            <!--
+                                Pour supprimer, on utilise un formulaire POST (pas un lien GET)
+                                C'est plus sécurisé : un simple lien ne devrait jamais supprimer des données !
+                            -->
+                            <form method="POST" action="{{ url_for('supprimer_offre', offre_id=offre.id) }}"
+                                  onsubmit="return confirm('⚠️ Supprimer cette offre et ses candidatures ?')">
+                                <button type="submit" class="btn btn-danger" style="padding:0.5rem 1rem; font-size:0.85rem;">🗑️</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <p style="color:var(--text-muted);">Aucune offre publiée. <a href="{{ url_for('publier_offre') }}">Créer une offre →</a></p>
+            {% endif %}
+        </div>
+
+        <!-- Candidatures reçues + Gestion Statuts (Sprint 4) -->
+        <div class="content-panel" style="margin-bottom:2rem;">
+            <h3>👥 Candidatures reçues</h3>
+
+            {% if donnees.candidatures %}
+                <div class="candidatures-list" style="margin-top:1.5rem;">
+                {% for c in donnees.candidatures %}
+                    <div class="candidature-item">
+                        <div class="candidature-header">
+                            <div>
+                                <strong>{{ c.candidat_nom }}</strong>
+                                <span style="color:var(--text-muted); font-size:0.85rem; margin-left:0.5rem;">{{ c.candidat_email }}</span>
+                                {% if c.telephone %}<span style="color:var(--text-muted); font-size:0.85rem;"> · 📞 {{ c.telephone }}</span>{% endif %}
+                            </div>
+                            <span class="badge-statut badge-{{ c.statut | lower | replace(' ','_') }}">
+                                {% if c.statut == 'Accepté' %}✅{% elif c.statut == 'Refusé' %}❌{% elif c.statut == 'Entretien planifié' %}📅{% else %}⏳{% endif %}
+                                {{ c.statut }}
+                            </span>
+                        </div>
+
+                        <p style="font-size:0.9rem; color:var(--text-muted); margin:0.5rem 0;">
+                            Pour : <strong>{{ c.offre_titre }}</strong> · {{ c.date_postulation[:10] }}
+                        </p>
+
+                        {% if c.profil_cv %}
+                            <details style="margin:0.75rem 0;">
+                                <summary style="cursor:pointer; font-size:0.85rem; color:var(--primary);">📄 Voir le profil/CV</summary>
+                                <p style="margin-top:0.5rem; font-size:0.85rem; background:var(--bg-input); padding:0.75rem; border-radius:8px; white-space:pre-wrap;">{{ c.profil_cv }}</p>
+                            </details>
+                        {% endif %}
+
+                        <!-- SPRINT 4 : Changer le statut + Planifier entretien -->
+                        <div class="candidature-actions">
+                            <!-- Formulaire pour changer le statut -->
+                            <form method="POST" action="{{ url_for('changer_statut', candidature_id=c.id) }}"
+                                  style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                                <select name="statut" class="form-control form-select" style="width:auto; padding:0.4rem 0.75rem; font-size:0.85rem;">
+                                    <option value="En attente"          {% if c.statut == 'En attente' %}selected{% endif %}>⏳ En attente</option>
+                                    <option value="Entretien planifié"  {% if c.statut == 'Entretien planifié' %}selected{% endif %}>📅 Entretien planifié</option>
+                                    <option value="Accepté"             {% if c.statut == 'Accepté' %}selected{% endif %}>✅ Accepté</option>
+                                    <option value="Refusé"              {% if c.statut == 'Refusé' %}selected{% endif %}>❌ Refusé</option>
+                                </select>
+                                <button type="submit" class="btn btn-outline" style="padding:0.4rem 0.75rem; font-size:0.85rem;">Mettre à jour</button>
+                            </form>
+
+                            <!-- Formulaire pour planifier un entretien -->
+                            <details style="margin-top:0.5rem; width:100%;">
+                                <summary style="cursor:pointer; font-size:0.85rem; color:var(--primary); padding:0.25rem 0;">
+                                    📅 Planifier un entretien
+                                </summary>
+                                <form method="POST"
+                                      action="{{ url_for('planifier_entretien', candidature_id=c.id) }}"
+                                      style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:0.75rem;">
+                                    <input type="datetime-local" name="date_entretien" required
+                                           class="form-control" style="width:auto; flex:1; min-width:200px; padding:0.4rem 0.75rem; font-size:0.85rem;">
+                                    <input type="text" name="lieu" placeholder="Lieu ou Lien (ex: Google Meet)"
+                                           class="form-control" style="width:auto; flex:1; min-width:180px; padding:0.4rem 0.75rem; font-size:0.85rem;">
+                                    <button type="submit" class="btn btn-primary" style="padding:0.4rem 0.75rem; font-size:0.85rem;">Confirmer</button>
+                                </form>
+                            </details>
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+            {% else %}
+                <p style="color:var(--text-muted); margin-top:1rem;">Aucune candidature reçue pour l'instant.</p>
+            {% endif %}
+        </div>
+
+        <!-- Entretiens planifiés (Sprint 4) -->
+        {% if donnees.entretiens %}
+        <div class="content-panel">
+            <h3>📅 Entretiens planifiés</h3>
+            <div class="table-wrapper" style="margin-top:1.5rem;">
+                <table class="data-table">
+                    <thead><tr><th>Candidat</th><th>Poste</th><th>Date & Heure</th><th>Lieu</th><th>Évaluation</th></tr></thead>
+                    <tbody>
+                    {% for e in donnees.entretiens %}
+                        <tr>
+                            <td><strong>{{ e.candidat_nom }}</strong></td>
+                            <td>{{ e.offre_titre }}</td>
+                            <td>{{ e.date_entretien }}</td>
+                            <td>{{ e.lieu or '—' }}</td>
+                            <td>
+                                {% if e.notes %}
+                                    <span style="font-size:0.85rem; color:var(--text-muted);">{{ e.notes[:50] }}...</span>
+                                {% else %}
+                                    <form method="POST" action="{{ url_for('evaluer', entretien_id=e.id) }}"
+                                          style="display:flex; gap:0.5rem;">
+                                        <input type="text" name="notes" placeholder="Notes d'évaluation..."
+                                               class="form-control" style="padding:0.3rem 0.5rem; font-size:0.85rem;">
+                                        <button type="submit" class="btn btn-outline" style="padding:0.3rem 0.75rem; font-size:0.85rem; white-space:nowrap;">💾</button>
+                                    </form>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+
+
+    <!-- ================================================================ -->
+    <!-- SECTION RH : VUE GLOBALE                                          -->
+    <!-- ================================================================ -->
+    {% elif role == 'RH' %}
+
+        <!-- Toutes les candidatures avec gestion des statuts -->
+        <div class="content-panel" style="margin-bottom:2rem;">
+            <h3>📨 Toutes les Candidatures</h3>
+            {% if donnees.candidatures %}
+                <div class="table-wrapper" style="margin-top:1.5rem; overflow-x:auto;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Candidat</th>
+                                <th>Email</th>
+                                <th>Offre</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for c in donnees.candidatures %}
+                            <tr>
+                                <td><strong>{{ c.candidat_nom }}</strong></td>
+                                <td style="font-size:0.85rem;">{{ c.candidat_email }}</td>
+                                <td>{{ c.offre_titre }}</td>
+                                <td style="font-size:0.85rem;">{{ c.date_postulation[:10] }}</td>
+                                <td>
+                                    <span class="badge-statut badge-{{ c.statut | lower | replace(' ','_') }}">
+                                        {% if c.statut == 'Accepté' %}✅{% elif c.statut == 'Refusé' %}❌{% elif c.statut == 'Entretien planifié' %}📅{% else %}⏳{% endif %}
+                                        {{ c.statut }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('changer_statut', candidature_id=c.id) }}"
+                                          style="display:flex; gap:0.3rem; flex-wrap:wrap;">
+                                        <select name="statut" class="form-control form-select" style="width:auto; padding:0.3rem; font-size:0.8rem;">
+                                            <option value="En attente"          {% if c.statut == 'En attente' %}selected{% endif %}>⏳ En attente</option>
+                                            <option value="Entretien planifié"  {% if c.statut == 'Entretien planifié' %}selected{% endif %}>📅 Entretien</option>
+                                            <option value="Accepté"             {% if c.statut == 'Accepté' %}selected{% endif %}>✅ Accepté</option>
+                                            <option value="Refusé"              {% if c.statut == 'Refusé' %}selected{% endif %}>❌ Refusé</option>
+                                        </select>
+                                        <button type="submit" class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.8rem;">OK</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p style="color:var(--text-muted); margin-top:1rem;">Aucune candidature enregistrée.</p>
+            {% endif %}
+        </div>
+
+        <!-- Tous les candidats avec leurs CVs -->
+        <div class="content-panel" style="margin-bottom:2rem;">
+            <h3>👤 Base des Candidats ({{ donnees.candidats | length }})</h3>
+            {% if donnees.candidats %}
+                <div style="display:grid; gap:1rem; margin-top:1.5rem;">
+                {% for candidat in donnees.candidats %}
+                    <div style="background:var(--bg-input); padding:1rem 1.25rem; border-radius:var(--border-radius-sm); border:1px solid var(--border-light);">
+                        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:0.5rem;">
+                            <div>
+                                <strong>{{ candidat.nom_utilisateur }}</strong>
+                                <span style="color:var(--text-muted); font-size:0.85rem; margin-left:0.5rem;">{{ candidat.email }}</span>
+                                {% if candidat.telephone %}<span style="color:var(--text-muted); font-size:0.85rem;"> · 📞 {{ candidat.telephone }}</span>{% endif %}
+                            </div>
+                        </div>
+                        {% if candidat.profil_cv %}
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem; white-space:pre-wrap;">
+                                {{ candidat.profil_cv[:200] }}{% if candidat.profil_cv|length > 200 %}...{% endif %}
+                            </p>
+                        {% else %}
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem; font-style:italic;">Aucun CV renseigné.</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Toutes les offres -->
+        <div class="content-panel">
+            <h3>📋 Toutes les Offres ({{ donnees.offres | length }})</h3>
+            {% if donnees.offres %}
+                <div class="table-wrapper" style="margin-top:1.5rem; overflow-x:auto;">
+                    <table class="data-table">
+                        <thead><tr><th>Titre</th><th>Recruteur</th><th>Contrat</th><th>Lieu</th><th>Statut</th><th>Date</th></tr></thead>
+                        <tbody>
+                        {% for offre in donnees.offres %}
+                            <tr>
+                                <td><strong>{{ offre.titre }}</strong></td>
+                                <td>{{ offre.recruteur_nom }}</td>
+                                <td>{{ offre.type_contrat or '—' }}</td>
+                                <td>{{ offre.localisation or '—' }}</td>
+                                <td><span class="badge-statut badge-{{ offre.statut | lower }}">{{ '🟢' if offre.statut == 'Ouverte' else '🔴' }} {{ offre.statut }}</span></td>
+                                <td style="font-size:0.85rem;">{{ offre.date_creation[:10] }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+
+
+    <!-- ================================================================ -->
+    <!-- SECTION ADMIN                                                     -->
+    <!-- ================================================================ -->
+    {% elif role == 'Admin' %}
+
+        <!-- Répartition par rôle -->
+        {% if donnees.stats.par_role %}
+        <div class="content-panel" style="margin-bottom:2rem;">
+            <h3>🎭 Répartition des utilisateurs par rôle</h3>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:1.5rem;">
+                {% for role_nom, nb in donnees.stats.par_role.items() %}
+                    <div class="stat-card" style="flex:1; min-width:140px;">
+                        <h4>{{ role_nom }}</h4>
+                        <div class="stat-value">{{ nb }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Tableau de tous les utilisateurs -->
+        <div class="content-panel">
+            <h3>👥 Gestion des Utilisateurs ({{ donnees.utilisateurs | length }})</h3>
+            <div class="table-wrapper" style="margin-top:1.5rem; overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Rôle actuel</th>
+                            <th>Inscrit le</th>
+                            <th>Modifier le rôle</th>
+                            <th>Supprimer</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for u in donnees.utilisateurs %}
+                        <tr>
+                            <td style="color:var(--text-muted);">{{ u.id }}</td>
+                            <td><strong>{{ u.nom_utilisateur }}</strong></td>
+                            <td style="font-size:0.85rem;">{{ u.email }}</td>
+                            <td>
+                                <span class="badge-role badge-{{ u.role | lower | replace(' ','') }}">{{ u.role }}</span>
+                            </td>
+                            <td style="font-size:0.85rem;">{{ u.date_creation[:10] }}</td>
+                            <td>
+                                <!-- Modifier le rôle d'un utilisateur -->
+                                <form method="POST" action="{{ url_for('changer_role', user_id=u.id) }}"
+                                      style="display:flex; gap:0.3rem;">
+                                    <select name="nouveau_role" class="form-control form-select" style="width:auto; padding:0.3rem; font-size:0.8rem;">
+                                        {% for r in ['Candidat','Recruteur','RH','Admin'] %}
+                                            <option value="{{ r }}" {% if u.role == r %}selected{% endif %}>{{ r }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="submit" class="btn btn-outline" style="padding:0.3rem 0.5rem; font-size:0.8rem;">✓</button>
+                                </form>
+                            </td>
+                            <td>
+                                {% if u.id != session.get('utilisateur_id') %}
+                                <!-- Ne peut pas supprimer son propre compte -->
+                                <form method="POST" action="{{ url_for('supprimer_user', user_id=u.id) }}"
+                                      onsubmit="return confirm('⚠️ Supprimer ce compte ?')">
+                                    <button type="submit" class="btn btn-danger" style="padding:0.3rem 0.5rem; font-size:0.8rem;">🗑️</button>
+                                </form>
+                                {% else %}
+                                    <span style="font-size:0.8rem; color:var(--text-muted);">Vous</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    {% endif %}
+
+</div>
+{% endblock %}

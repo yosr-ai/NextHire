@@ -1,0 +1,127 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if title %} {{ title }} — NextHire {% else %} NextHire | Plateforme de Recrutement {% endif %}</title>
+    <meta name="description" content="NextHire - Plateforme de gestion du recrutement et suivi des candidatures">
+    <!-- Google Fonts : typographie moderne -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Feuille de styles principale -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- ===================== BARRE DE NAVIGATION ===================== -->
+    <header class="navbar">
+        <div class="container nav-content">
+            <!-- Logo -->
+            <a href="{{ url_for('accueil') }}" class="logo">Next<span>Hire</span></a>
+
+            <!-- Liens de navigation -->
+            <nav class="nav-links">
+                <a href="{{ url_for('accueil') }}">Accueil</a>
+                <a href="{{ url_for('liste_offres') }}">Offres d'emploi</a>
+
+                {# Si l'utilisateur est connecté (session active) #}
+                {% if session.get('utilisateur_id') %}
+                    <a href="{{ url_for('tableau_de_bord') }}">Tableau de bord</a>
+
+                    {# Statistiques : visible uniquement pour Recruteur, RH, Admin #}
+                    {% if session.get('role') in ['Recruteur', 'RH', 'Admin'] %}
+                        <a href="{{ url_for('statistiques') }}">Statistiques</a>
+                    {% endif %}
+
+                    <span class="nav-badge nav-badge-{{ session.get('role', '') | lower | replace(' ', '') }}">
+                        {{ session.get('role') }}
+                    </span>
+                    <a href="{{ url_for('deconnexion') }}" class="btn btn-outline">Déconnexion</a>
+                {% else %}
+                    <a href="{{ url_for('connexion') }}" class="btn btn-outline">Connexion</a>
+                    <a href="{{ url_for('inscription') }}" class="btn btn-primary">S'inscrire</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===================== CONTENU PRINCIPAL ===================== -->
+    <main class="container content-overlay">
+        {# Affiche les messages flash (succès, erreur, info) #}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'info' %}ℹ️{% endif %}
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {# Chaque page remplace ce bloc par son propre contenu #}
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ===================== PIED DE PAGE ===================== -->
+    <footer class="footer" style="padding: 3rem 0; border-top: 1px solid var(--border-light); margin-top: 4rem;">
+        <div class="container text-center">
+            <a href="{{ url_for('accueil') }}" class="logo" style="font-size: 1.2rem; margin-bottom: 1rem; display: block;">Next<span>Hire</span></a>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">© 2026 <strong>NextHire</strong> — Solution de Recrutement Innovante</p>
+            <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 2rem; font-size: 0.85rem;">
+                <a href="#" style="color: var(--text-muted); text-decoration: none;">Confidentialité</a>
+                <a href="#" style="color: var(--text-muted); text-decoration: none;">Conditions d'utilisation</a>
+                <a href="#" style="color: var(--text-muted); text-decoration: none;">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
