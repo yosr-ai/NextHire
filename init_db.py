@@ -9,12 +9,14 @@ from werkzeug.security import generate_password_hash
 # On l'exécute UNE SEULE FOIS au début (ou quand on veut tout réinitialiser).
 
 # Supprime l'ancienne base pour repartir à zéro
-if os.path.exists('recrutement_simple.db'):
-    os.remove('recrutement_simple.db')
-    print("Ancienne base supprimée.")
+db_path = os.environ.get('DATABASE_PATH', 'recrutement_simple.db')
+
+if os.path.exists(db_path):
+    os.remove(db_path)
+    print(f"Ancienne base supprimée ({db_path}).")
 
 # --- Connexion à la nouvelle base ---
-connexion = sqlite3.connect('recrutement_simple.db')
+connexion = sqlite3.connect(db_path)
 curseur = connexion.cursor()
 
 # ==========================================

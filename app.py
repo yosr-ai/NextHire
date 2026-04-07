@@ -12,6 +12,7 @@
 #
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
@@ -30,7 +31,8 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row permet d'accéder aux colonnes
     par leur nom (ex: utilisateur['email']) au lieu de l'index (utilisateur[2]).
     """
-    conn = sqlite3.connect('recrutement_simple.db')
+    db_path = os.environ.get('DATABASE_PATH', 'recrutement_simple.db')
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     return conn
 

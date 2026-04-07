@@ -4,3 +4,8 @@ __pycache__/
 .env
 .idea/
 .vscode/
+
+# Ignore local sqlite databases
+*.db
+*.sqlite3
+instance/
