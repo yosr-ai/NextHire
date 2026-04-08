@@ -24,7 +24,7 @@ from datetime import datetime
 # -------------------------------------------------------
 # INITIALISATION DE L'APPLICATION
 # -------------------------------------------------------
-app = Flask(__name__, template_folder='app/html', static_folder='app/css')
+app = Flask(__name__, template_folder='app/html', static_folder='app')
 app.secret_key = "nexthire_cle_secrete_2026"
 
 # -------------------------------------------------------
