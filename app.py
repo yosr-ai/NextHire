@@ -16,8 +16,10 @@ import os
 try:
     import psycopg2
     import psycopg2.extras
-except ImportError:
+    import_error = None
+except ImportError as e:
     psycopg2 = None
+    import_error = str(e)
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
@@ -36,7 +38,7 @@ class DBConnection:
     def __init__(self):
         if IS_POSTGRES:
             if not psycopg2:
-                raise RuntimeError("psycopg2-binary is not installed.")
+                raise RuntimeError(f"psycopg2-binary is not installed or failed to load: {import_error}")
             try:
                 # Log connection attempt
                 print("--- Database: Attempting to connect to PostgreSQL... ---")
