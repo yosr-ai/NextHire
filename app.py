@@ -13,6 +13,11 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 import os
+try:
+    import psycopg2
+    import psycopg2.extras
+except ImportError:
+    psycopg2 = None
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 
@@ -25,16 +30,37 @@ app.secret_key = "nexthire_cle_secrete_2026"
 # -------------------------------------------------------
 # FONCTION UTILITAIRE : Connexion à la base de données
 # -------------------------------------------------------
+IS_POSTGRES = 'DATABASE_URL' in os.environ
+
+class DBConnection:
+    def __init__(self):
+        if IS_POSTGRES:
+            if not psycopg2:
+                raise RuntimeError("psycopg2-binary is not installed.")
+            self.conn = psycopg2.connect(os.environ['DATABASE_URL'])
+        else:
+            db_path = os.environ.get('DATABASE_PATH', 'recrutement_simple.db')
+            self.conn = sqlite3.connect(db_path)
+            self.conn.row_factory = sqlite3.Row
+
+    def execute(self, query, params=()):
+        if IS_POSTGRES:
+            # PostgreSQL requires %s instead of ? for parameterized queries
+            pg_query = query.replace('?', '%s')
+            cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cur.execute(pg_query, params)
+            return cur
+        else:
+            return self.conn.execute(query, params)
+
+    def commit(self):
+        self.conn.commit()
+
+    def close(self):
+        self.conn.close()
+
 def get_db_connection():
-    """
-    Se connecte au fichier SQLite et retourne la connexion.
-    conn.row_factory = sqlite3.Row permet d'accéder aux colonnes
-    par leur nom (ex: utilisateur['email']) au lieu de l'index (utilisateur[2]).
-    """
-    db_path = os.environ.get('DATABASE_PATH', 'recrutement_simple.db')
-    conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row
-    return conn
+    return DBConnection()
 
 # -------------------------------------------------------
 # PROTECTION DES PAGES
@@ -88,8 +114,14 @@ def inscription():
         nom       = request.form['username']
         email     = request.form['email']
         mdp       = request.form['password']
-        role      = request.form['role']
+        mdp_conf  = request.form['confirm_password']
+        role      = 'Candidat' # Par défaut, tout le monde s'inscrit en tant que Candidat
         telephone = request.form.get('telephone', '')  # .get() → valeur vide si absent
+
+        # SÉCURITÉ : Vérification que les deux mots de passe correspondent
+        if mdp != mdp_conf:
+            flash("Erreur : les mots de passe ne correspondent pas.", "danger")
+            return redirect(url_for('inscription'))
 
         # SÉCURITÉ : On ne stocke JAMAIS le mot de passe en clair !
         # generate_password_hash() le transforme en une longue chaîne illisible (hash)
@@ -107,8 +139,9 @@ def inscription():
             flash("Inscription réussie ! Vous pouvez maintenant vous connecter.", "success")
             return redirect(url_for('connexion'))
 
-        except sqlite3.IntegrityError:
+        except (sqlite3.IntegrityError, Exception) as e:
             # Cette erreur arrive si l'email ou le nom est déjà pris (UNIQUE dans la table)
+            # Ou toute autre erreur avec la base de données
             flash("Erreur : cet email ou ce nom d'utilisateur est déjà utilisé.", "danger")
         finally:
             conn.close()  # TOUJOURS fermer la connexion, même en cas d'erreur
@@ -812,10 +845,10 @@ def changer_role(user_id):
     flash(f"Rôle modifié : {nouveau_role}", "success")
     return redirect(url_for('tableau_de_bord'))
 
-
 # ============================================================
 # DÉMARRAGE DU SERVEUR
 # ============================================================
+
 if __name__ == '__main__':
     # On écoute sur 0.0.0.0 pour être sûr que le site soit accessible
     # même si 'localhost' ne fonctionne pas correctement sur votre machine.

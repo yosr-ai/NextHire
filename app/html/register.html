@@ -47,26 +47,13 @@
                 <label class="form-control-label" for="password">Mot de passe</label>
                 <input type="password" name="password" id="password" class="form-control"
                        placeholder="Minimum 6 caractères" required minlength="6">
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">
-                    🔒 Votre mot de passe sera chiffré (haché) avant d'être sauvegardé.
-                </p>
             </div>
 
-            <!-- Choix du rôle -->
+            <!-- Confirmation du mot de passe -->
             <div class="form-group">
-                <label class="form-control-label" for="role">Je suis...</label>
-                <!--
-                    <select> = une liste déroulante.
-                    name="role" → Flask lira request.form['role']
-                    Chaque <option value="X"> envoie la valeur X au serveur.
-                -->
-                <select name="role" id="role" class="form-control form-select" required>
-                    <option value="" disabled selected>-- Choisissez votre rôle --</option>
-                    <option value="Candidat">👤 Candidat — Je cherche un emploi</option>
-                    <option value="Recruteur">🎯 Recruteur — Je publie des offres</option>
-                    <option value="RH">🏢 RH — Je supervise le recrutement</option>
-                    <option value="Admin">🛡️ Admin — Je gère la plateforme</option>
-                </select>
+                <label class="form-control-label" for="confirm_password">Confirmer le mot de passe</label>
+                <input type="password" name="confirm_password" id="confirm_password" class="form-control"
+                       placeholder="Répétez votre mot de passe" required minlength="6">
             </div>
 
             <button type="submit" class="btn btn-primary btn-block">Créer mon compte</button>
