@@ -37,7 +37,14 @@ class DBConnection:
         if IS_POSTGRES:
             if not psycopg2:
                 raise RuntimeError("psycopg2-binary is not installed.")
-            self.conn = psycopg2.connect(os.environ['DATABASE_URL'])
+            try:
+                # Log connection attempt
+                print("--- Database: Attempting to connect to PostgreSQL... ---")
+                self.conn = psycopg2.connect(os.environ['DATABASE_URL'], connect_timeout=5)
+                print("--- Database: Connection SUCCESSFUL! ---")
+            except Exception as e:
+                print(f"--- Database CONNECTION ERROR: {str(e)} ---")
+                raise e
         else:
             db_path = os.environ.get('DATABASE_PATH', 'recrutement_simple.db')
             self.conn = sqlite3.connect(db_path)
