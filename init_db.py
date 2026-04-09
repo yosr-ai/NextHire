@@ -58,7 +58,7 @@ def executemany(query, params_list):
 # ==========================================
 # SPRINT 1 : TABLE DES UTILISATEURS
 # ==========================================
-execute(f'''it
+execute(f'''
 CREATE TABLE IF NOT EXISTS utilisateurs (
     id              {TYPE_SERIAL},
     nom_utilisateur TEXT NOT NULL UNIQUE,
