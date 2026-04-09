@@ -563,10 +563,11 @@ def tableau_de_bord():
         flash("Veuillez vous connecter pour accéder à cette page.", "danger")
         return redirect(url_for('connexion'))
 
-    conn     = get_db_connection()
-    role     = session.get('role')
-    uid      = session['utilisateur_id']
-    donnees  = {}  # Dictionnaire qui contiendra toutes les données à afficher
+    try:
+        conn     = get_db_connection()
+        role     = session.get('role')
+        uid      = session['utilisateur_id']
+        donnees  = {}  # Dictionnaire qui contiendra toutes les données à afficher
 
     # -------------------------------------------------------
     # CANDIDAT : Mon profil + Mes candidatures
@@ -732,14 +733,22 @@ def tableau_de_bord():
             'par_role':         {r['role']: r['nb'] for r in roles_stats},
         }
 
-    conn.close()
+        conn.close()
 
-    return render_template(
-        'dashboard.html',
-        nom=session['nom_utilisateur'],
-        role=role,
-        donnees=donnees
-    )
+        return render_template(
+            'dashboard.html',
+            nom=session['nom_utilisateur'],
+            role=role,
+            donnees=donnees
+        )
+    except Exception as e:
+        if 'conn' in locals():
+            conn.close()
+        import traceback
+        error_msg = f"💥 Erreur Critique : {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)
+        flash(f"Erreur d'affichage du tableau de bord : {str(e)}", "danger")
+        return redirect(url_for('accueil'))
 
 
 # ============================================================
