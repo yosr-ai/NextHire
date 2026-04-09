@@ -29,6 +29,16 @@ from datetime import datetime
 app = Flask(__name__, template_folder='app/html', static_folder='app')
 app.secret_key = "nexthire_cle_secrete_2026"
 
+# Filtre Jinja2 personnalisé pour formater les dates (compatible SQLite et Postgres)
+def format_date(value):
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value[:10]
+    return value.strftime("%Y-%m-%d")
+
+app.jinja_env.filters['date_short'] = format_date
+
 # -------------------------------------------------------
 # FONCTION UTILITAIRE : Connexion à la base de données
 # -------------------------------------------------------

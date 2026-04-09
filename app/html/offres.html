@@ -58,7 +58,7 @@
                         {{ offre.type_contrat or 'Non précisé' }}
                     </span>
                     <!-- Afficher "Nouveau" si l'offre date de moins de 7 jours -->
-                    <span class="offre-date">{{ offre.date_creation[:10] }}</span>
+                    <span class="offre-date">{{ offre.date_creation|date_short }}</span>
                 </div>
 
                 <!-- Titre et recruteur -->

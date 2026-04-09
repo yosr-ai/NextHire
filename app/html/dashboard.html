@@ -129,7 +129,7 @@
                                 <td><strong>{{ c.offre_titre }}</strong></td>
                                 <td>{{ c.localisation or '—' }}</td>
                                 <td>{{ c.type_contrat or '—' }}</td>
-                                <td>{{ c.date_postulation[:10] }}</td>
+                                <td>{{ c.date_postulation|date_short }}</td>
                                 <td>
                                     <!-- Badge coloré selon le statut -->
                                     <span class="badge-statut badge-{{ c.statut | lower | replace(' ','_') }}">
@@ -225,7 +225,7 @@
                         </div>
 
                         <p style="font-size:0.9rem; color:var(--text-muted); margin:0.5rem 0;">
-                            Pour : <strong>{{ c.offre_titre }}</strong> · {{ c.date_postulation[:10] }}
+                            Pour : <strong>{{ c.offre_titre }}</strong> · {{ c.date_postulation|date_short }}
                         </p>
 
                         {% if c.profil_cv %}
@@ -335,7 +335,7 @@
                                 <td><strong>{{ c.candidat_nom }}</strong></td>
                                 <td style="font-size:0.85rem;">{{ c.candidat_email }}</td>
                                 <td>{{ c.offre_titre }}</td>
-                                <td style="font-size:0.85rem;">{{ c.date_postulation[:10] }}</td>
+                                <td style="font-size:0.85rem;">{{ c.date_postulation|date_short }}</td>
                                 <td>
                                     <span class="badge-statut badge-{{ c.statut | lower | replace(' ','_') }}">
                                         {% if c.statut == 'Accepté' %}✅{% elif c.statut == 'Refusé' %}❌{% elif c.statut == 'Entretien planifié' %}📅{% else %}⏳{% endif %}
@@ -406,7 +406,7 @@
                                 <td>{{ offre.type_contrat or '—' }}</td>
                                 <td>{{ offre.localisation or '—' }}</td>
                                 <td><span class="badge-statut badge-{{ offre.statut | lower }}">{{ '🟢' if offre.statut == 'Ouverte' else '🔴' }} {{ offre.statut }}</span></td>
-                                <td style="font-size:0.85rem;">{{ offre.date_creation[:10] }}</td>
+                                <td style="font-size:0.85rem;">{{ offre.date_creation|date_short }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -461,7 +461,7 @@
                             <td>
                                 <span class="badge-role badge-{{ u.role | lower | replace(' ','') }}">{{ u.role }}</span>
                             </td>
-                            <td style="font-size:0.85rem;">{{ u.date_creation[:10] }}</td>
+                            <td style="font-size:0.85rem;">{{ u.date_creation|date_short }}</td>
                             <td>
                                 <!-- Modifier le rôle d'un utilisateur -->
                                 <form method="POST" action="{{ url_for('changer_role', user_id=u.id) }}"
