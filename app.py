@@ -513,11 +513,24 @@ def planifier_entretien(candidature_id):
     lieu           = request.form.get('lieu', '')
 
     conn = get_db_connection()
-    # Ajouter l'entretien dans la table entretiens
-    conn.execute(
-        'INSERT INTO entretiens (candidature_id, date_entretien, lieu) VALUES (?,?,?)',
-        (candidature_id, date_entretien, lieu)
-    )
+    # Vérifier si un entretien existe déjà pour cette candidature
+    entretien_existant = conn.execute('SELECT id FROM entretiens WHERE candidature_id = ?', (candidature_id,)).fetchone()
+
+    if entretien_existant:
+        # Mettre à jour l'entretien existant
+        conn.execute(
+            'UPDATE entretiens SET date_entretien = ?, lieu = ? WHERE candidature_id = ?',
+            (date_entretien, lieu, candidature_id)
+        )
+        flash("Entretien modifié avec succès !", "success")
+    else:
+        # Ajouter l'entretien dans la table entretiens
+        conn.execute(
+            'INSERT INTO entretiens (candidature_id, date_entretien, lieu) VALUES (?,?,?)',
+            (candidature_id, date_entretien, lieu)
+        )
+        flash("Entretien planifié avec succès !", "success")
+
     # Mettre à jour le statut de la candidature
     conn.execute(
         "UPDATE candidatures SET statut = 'Entretien planifié' WHERE id = ?",
@@ -525,7 +538,7 @@ def planifier_entretien(candidature_id):
     )
     conn.commit()
     conn.close()
-    flash("Entretien planifié avec succès !", "success")
+    
     return redirect(url_for('tableau_de_bord'))
 
 
