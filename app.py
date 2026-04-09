@@ -558,11 +558,6 @@ def evaluer(entretien_id):
 # -------------------------------------------------------
 @app.route('/dashboard')
 def tableau_de_bord():
-    """
-    Page principale après connexion.
-    Le contenu affiché dépend du rôle de l'utilisateur (Candidat, Recruteur, RH, Admin).
-    On utilise des requêtes SQL différentes selon le rôle.
-    """
     if 'utilisateur_id' not in session:
         flash("Veuillez vous connecter pour accéder à cette page.", "danger")
         return redirect(url_for('connexion'))
@@ -571,189 +566,103 @@ def tableau_de_bord():
         conn     = get_db_connection()
         role     = session.get('role')
         uid      = session['utilisateur_id']
-        donnees  = {}  # Dictionnaire qui contiendra toutes les données à afficher
+        donnees  = {}
 
-    # -------------------------------------------------------
-    # CANDIDAT : Mon profil + Mes candidatures
-    # -------------------------------------------------------
-    if role == 'Candidat':
-        # Récupérer le profil complet
-        utilisateur = conn.execute(
-            'SELECT * FROM utilisateurs WHERE id = ?', (uid,)
-        ).fetchone()
-        donnees['profil_cv']  = utilisateur['profil_cv'] or ''
-        donnees['telephone']  = utilisateur['telephone'] or ''
+        if role == 'Candidat':
+            u = conn.execute('SELECT * FROM utilisateurs WHERE id = ?', (uid,)).fetchone()
+            donnees['profil_cv'] = u['profil_cv'] or ''
+            donnees['telephone'] = u['telephone'] or ''
+            donnees['candidatures'] = conn.execute('''
+                SELECT c.id, c.offre_id, c.date_postulation, c.statut, 
+                       o.titre as offre_titre, o.localisation, o.type_contrat
+                FROM candidatures c
+                JOIN offres o ON c.offre_id = o.id
+                WHERE c.candidat_id = ?
+                ORDER BY c.date_postulation DESC''', (uid,)).fetchall()
+            donnees['stats'] = {
+                'total': len(donnees['candidatures']),
+                'en_attente': sum(1 for c in donnees['candidatures'] if c['statut'] == 'En attente'),
+                'accepte': sum(1 for c in donnees['candidatures'] if c['statut'] == 'Accepté'),
+                'refuse': sum(1 for c in donnees['candidatures'] if c['statut'] == 'Refusé'),
+                'entretien': sum(1 for c in donnees['candidatures'] if c['statut'] == 'Entretien planifié')
+            }
+            donnees['entretiens'] = conn.execute('''
+                SELECT e.id, e.date_entretien, e.lieu, e.notes, o.titre as offre_titre
+                FROM entretiens e
+                JOIN candidatures c ON e.candidature_id = c.id
+                JOIN offres o ON c.offre_id = o.id
+                WHERE c.candidat_id = ?
+                ORDER BY e.date_entretien ASC''', (uid,)).fetchall()
 
-        # Récupérer toutes ses candidatures avec le titre de l'offre
-        donnees['candidatures'] = conn.execute(
-            '''SELECT c.id, c.offre_id, c.date_postulation, c.statut, 
-                      o.titre as offre_titre, o.localisation, o.type_contrat
-               FROM candidatures c
-               JOIN offres o ON c.offre_id = o.id
-               WHERE c.candidat_id = ?
-               ORDER BY c.date_postulation DESC''',
-            (uid,)
-        ).fetchall()
+        elif role == 'Recruteur':
+            donnees['offres'] = conn.execute('SELECT * FROM offres WHERE recruteur_id = ? ORDER BY date_creation DESC', (uid,)).fetchall()
+            donnees['candidatures'] = conn.execute('''
+                SELECT c.id, c.statut, c.date_postulation, 
+                       u.nom_utilisateur as candidat_nom, u.email as candidat_email, 
+                       u.telephone, u.profil_cv, o.titre as offre_titre, o.id as offre_id
+                FROM candidatures c
+                JOIN utilisateurs u ON c.candidat_id = u.id
+                JOIN offres o ON c.offre_id = o.id
+                WHERE o.recruteur_id = ?
+                ORDER BY c.date_postulation DESC''', (uid,)).fetchall()
+            donnees['entretiens'] = conn.execute('''
+                SELECT e.id, e.date_entretien, e.lieu, u.nom_utilisateur as candidat_nom, o.titre as offre_titre
+                FROM entretiens e
+                JOIN candidatures c ON e.candidature_id = c.id
+                JOIN utilisateurs u ON c.candidat_id = u.id
+                JOIN offres o ON c.offre_id = o.id
+                WHERE o.recruteur_id = ?
+                ORDER BY e.date_entretien ASC''', (uid,)).fetchall()
+            donnees['stats'] = {
+                'total_offres': len(donnees['offres']),
+                'offres_ouvertes': sum(1 for o in donnees['offres'] if o['statut'] == 'Ouverte'),
+                'total_cands': len(donnees['candidatures']),
+                'en_attente': sum(1 for c in donnees['candidatures'] if c['statut'] == 'En attente'),
+                'accepte': sum(1 for c in donnees['candidatures'] if c['statut'] == 'Accepté'),
+                'refuse': sum(1 for c in donnees['candidatures'] if c['statut'] == 'Refusé'),
+                'entretiens': len(donnees['entretiens'])
+            }
 
-        # SPRINT 5 — Stats du candidat
-        donnees['stats'] = {
-            'total':       len(donnees['candidatures']),
-            'en_attente':  sum(1 for c in donnees['candidatures'] if c['statut'] == 'En attente'),
-            'accepte':     sum(1 for c in donnees['candidatures'] if c['statut'] == 'Accepté'),
-            'refuse':      sum(1 for c in donnees['candidatures'] if c['statut'] == 'Refusé'),
-            'entretien':   sum(1 for c in donnees['candidatures'] if c['statut'] == 'Entretien planifié'),
-        }
+        elif role == 'RH':
+            donnees['candidats'] = conn.execute("SELECT * FROM utilisateurs WHERE role = 'Candidat' ORDER BY date_creation DESC").fetchall()
+            donnees['offres'] = conn.execute("SELECT o.*, u.nom_utilisateur as recruteur_nom FROM offres o JOIN utilisateurs u ON o.recruteur_id = u.id ORDER BY o.date_creation DESC").fetchall()
+            donnees['candidatures'] = conn.execute("SELECT c.*, u.nom_utilisateur as candidat_nom, u.email as candidat_email, o.titre as offre_titre FROM candidatures c JOIN utilisateurs u ON c.candidat_id = u.id JOIN offres o ON c.offre_id = o.id ORDER BY c.date_postulation DESC").fetchall()
+            donnees['entretiens'] = conn.execute("SELECT e.*, u.nom_utilisateur as candidat_nom, o.titre as offre_titre FROM entretiens e JOIN candidatures c ON e.candidature_id = c.id JOIN utilisateurs u ON c.candidat_id = u.id JOIN offres o ON c.offre_id = o.id ORDER BY e.date_entretien ASC").fetchall()
+            all_c = donnees['candidatures']
+            donnees['stats'] = {
+                'total_candidats': len(donnees['candidats']),
+                'total_offres': len(donnees['offres']),
+                'total_candidatures': len(all_c),
+                'en_attente': sum(1 for c in all_c if c['statut'] == 'En attente'),
+                'accepte': sum(1 for c in all_c if c['statut'] == 'Accepté'),
+                'refuse': sum(1 for c in all_c if c['statut'] == 'Refusé'),
+                'entretiens_planifies': len(donnees['entretiens'])
+            }
 
-        # Récupérer ses entretiens planifiés
-        donnees['entretiens'] = conn.execute(
-            '''SELECT e.id, e.date_entretien, e.lieu, e.notes, o.titre as offre_titre
-               FROM entretiens e
-               JOIN candidatures c ON e.candidature_id = c.id
-               JOIN offres o ON c.offre_id = o.id
-               WHERE c.candidat_id = ?
-               ORDER BY e.date_entretien ASC''',
-            (uid,)
-        ).fetchall()
-
-    # -------------------------------------------------------
-    # RECRUTEUR : Mes offres + Candidatures reçues + Entretiens
-    # -------------------------------------------------------
-    elif role == 'Recruteur':
-        # Les offres de ce recruteur
-        donnees['offres'] = conn.execute(
-            'SELECT * FROM offres WHERE recruteur_id = ? ORDER BY date_creation DESC',
-            (uid,)
-        ).fetchall()
-
-        # Toutes les candidatures pour ses offres, avec infos candidat
-        donnees['candidatures'] = conn.execute(
-            '''SELECT c.id, c.statut, c.date_postulation, 
-                      u.nom_utilisateur as candidat_nom, u.email as candidat_email, 
-                      u.telephone, u.profil_cv, o.titre as offre_titre, o.id as offre_id
-               FROM candidatures c
-               JOIN utilisateurs u ON c.candidat_id = u.id
-               JOIN offres o ON c.offre_id = o.id
-               WHERE o.recruteur_id = ?
-               ORDER BY c.date_postulation DESC''',
-            (uid,)
-        ).fetchall()
-
-        # Entretiens planifiés pour ses offres
-        donnees['entretiens'] = conn.execute(
-            '''SELECT entretiens.*, utilisateurs.nom_utilisateur as candidat_nom,
-                      offres.titre as offre_titre, candidatures.id as candidature_id
-               FROM entretiens
-               JOIN candidatures ON entretiens.candidature_id = candidatures.id
-               JOIN utilisateurs ON candidatures.candidat_id = utilisateurs.id
-               JOIN offres ON candidatures.offre_id = offres.id
-               WHERE offres.recruteur_id = ?
-               ORDER BY entretiens.date_entretien ASC''',
-            (uid,)
-        ).fetchall()
-
-        # SPRINT 5 — Stats du recruteur
-        total_offres = len(donnees['offres'])
-        total_cands  = len(donnees['candidatures'])
-        donnees['stats'] = {
-            'total_offres':    total_offres,
-            'offres_ouvertes': sum(1 for o in donnees['offres'] if o['statut'] == 'Ouverte'),
-            'total_cands':     total_cands,
-            'en_attente':      sum(1 for c in donnees['candidatures'] if c['statut'] == 'En attente'),
-            'accepte':         sum(1 for c in donnees['candidatures'] if c['statut'] == 'Accepté'),
-            'refuse':          sum(1 for c in donnees['candidatures'] if c['statut'] == 'Refusé'),
-            'entretiens':      len(donnees['entretiens']),
-        }
-
-    # -------------------------------------------------------
-    # RH : Vue globale de tout le système
-    # -------------------------------------------------------
-    elif role == 'RH':
-        donnees['candidats'] = conn.execute(
-            "SELECT * FROM utilisateurs WHERE role = 'Candidat' ORDER BY date_creation DESC"
-        ).fetchall()
-
-        donnees['offres'] = conn.execute(
-            '''SELECT offres.*, utilisateurs.nom_utilisateur as recruteur_nom
-               FROM offres
-               JOIN utilisateurs ON offres.recruteur_id = utilisateurs.id
-               ORDER BY offres.date_creation DESC'''
-        ).fetchall()
-
-        donnees['candidatures'] = conn.execute(
-            '''SELECT candidatures.*, utilisateurs.nom_utilisateur as candidat_nom,
-                      utilisateurs.email as candidat_email, offres.titre as offre_titre
-               FROM candidatures
-               JOIN utilisateurs ON candidatures.candidat_id = utilisateurs.id
-               JOIN offres ON candidatures.offre_id = offres.id
-               ORDER BY candidatures.date_postulation DESC'''
-        ).fetchall()
-
-        donnees['entretiens'] = conn.execute(
-            '''SELECT entretiens.*, utilisateurs.nom_utilisateur as candidat_nom,
-                      offres.titre as offre_titre
-               FROM entretiens
-               JOIN candidatures ON entretiens.candidature_id = candidatures.id
-               JOIN utilisateurs ON candidatures.candidat_id = utilisateurs.id
-               JOIN offres ON candidatures.offre_id = offres.id
-               ORDER BY entretiens.date_entretien ASC'''
-        ).fetchall()
-
-        # SPRINT 5 — Stats RH globales
-        all_cands = donnees['candidatures']
-        donnees['stats'] = {
-            'total_candidats':    len(donnees['candidats']),
-            'total_offres':       len(donnees['offres']),
-            'total_candidatures': len(all_cands),
-            'en_attente':         sum(1 for c in all_cands if c['statut'] == 'En attente'),
-            'accepte':            sum(1 for c in all_cands if c['statut'] == 'Accepté'),
-            'refuse':             sum(1 for c in all_cands if c['statut'] == 'Refusé'),
-            'entretien':          sum(1 for c in all_cands if c['statut'] == 'Entretien planifié'),
-            'entretiens_planifies': len(donnees['entretiens']),
-        }
-
-    # -------------------------------------------------------
-    # ADMIN : Gestion totale des utilisateurs + stats
-    # -------------------------------------------------------
-    elif role == 'Admin':
-        donnees['utilisateurs'] = conn.execute(
-            'SELECT id, nom_utilisateur, email, role, date_creation FROM utilisateurs ORDER BY date_creation DESC'
-        ).fetchall()
-
-        # Statistiques globales de la plateforme
-        nb_offres         = conn.execute("SELECT COUNT(*) FROM offres").fetchone()[0]
-        nb_candidatures   = conn.execute("SELECT COUNT(*) FROM candidatures").fetchone()[0]
-        nb_entretiens     = conn.execute("SELECT COUNT(*) FROM entretiens").fetchone()[0]
-
-        # Compter le nombre d'utilisateurs par rôle
-        roles_stats = conn.execute(
-            "SELECT role, COUNT(*) as nb FROM utilisateurs GROUP BY role"
-        ).fetchall()
-
-        donnees['stats'] = {
-            'total_users':      len(donnees['utilisateurs']),
-            'total_offres':     nb_offres,
-            'total_cands':      nb_candidatures,
-            'total_entretiens': nb_entretiens,
-            'par_role':         {r['role']: r['nb'] for r in roles_stats},
-        }
+        elif role == 'Admin':
+            donnees['utilisateurs'] = conn.execute('SELECT id, nom_utilisateur, email, role, date_creation FROM utilisateurs ORDER BY date_creation DESC').fetchall()
+            nb_o = conn.execute("SELECT COUNT(*) FROM offres").fetchone()[0]
+            nb_c = conn.execute("SELECT COUNT(*) FROM candidatures").fetchone()[0]
+            nb_e = conn.execute("SELECT COUNT(*) FROM entretiens").fetchone()[0]
+            roles_stats_rows = conn.execute("SELECT role, COUNT(*) as nb FROM utilisateurs GROUP BY role").fetchall()
+            donnees['stats'] = {
+                'total_users': len(donnees['utilisateurs']),
+                'total_offres': nb_o,
+                'total_cands': nb_c,
+                'total_entretiens': nb_e,
+                'par_role': {r['role']: r['nb'] for r in roles_stats_rows}
+            }
 
         conn.close()
+        return render_template('dashboard.html', nom=session.get('nom_utilisateur'), role=role, donnees=donnees)
 
-        return render_template(
-            'dashboard.html',
-            nom=session['nom_utilisateur'],
-            role=role,
-            donnees=donnees
-        )
     except Exception as e:
-        if 'conn' in locals():
-            conn.close()
+        if 'conn' in locals(): conn.close()
         import traceback
-        error_msg = f"💥 Erreur Critique : {str(e)}\n{traceback.format_exc()}"
-        print(error_msg)
-        flash(f"Erreur d'affichage du tableau de bord : {str(e)}", "danger")
+        print(f"ERROR: {str(e)}
+{traceback.format_exc()}")
+        flash(f"Erreur d'affichage : {str(e)}", "danger")
         return redirect(url_for('accueil'))
-
 
 # ============================================================
 # ============================================================
