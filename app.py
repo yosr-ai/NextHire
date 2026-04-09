@@ -29,6 +29,10 @@ from datetime import datetime
 app = Flask(__name__, template_folder='app/html', static_folder='app')
 app.secret_key = "nexthire_cle_secrete_2026"
 
+# Configuration des Sessions : expire à la fermeture du navigateur
+app.config['SESSION_PERMANENT'] = False
+
+
 # Filtre Jinja2 personnalisé pour formater les dates (compatible SQLite et Postgres)
 def format_date(value):
     if value is None:
