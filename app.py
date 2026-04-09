@@ -659,8 +659,7 @@ def tableau_de_bord():
     except Exception as e:
         if 'conn' in locals(): conn.close()
         import traceback
-        print(f"ERROR: {str(e)}
-{traceback.format_exc()}")
+        print(f"ERROR: {str(e)}\\n{traceback.format_exc()}")
         flash(f"Erreur d'affichage : {str(e)}", "danger")
         return redirect(url_for('accueil'))
 
