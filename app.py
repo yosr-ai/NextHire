@@ -194,11 +194,11 @@ def connexion():
 
         # check_password_hash compare le mot de passe saisi avec le hash stocké
         if utilisateur and check_password_hash(utilisateur['mot_de_passe'], mdp_saisi):
-            # ✅ Connexion réussie : on mémorise l'utilisateur dans la session
+            # Connexion réussie : on mémorise l'utilisateur dans la session
             session['utilisateur_id']  = utilisateur['id']
             session['nom_utilisateur'] = utilisateur['nom_utilisateur']
             session['role']            = utilisateur['role']
-            flash(f"Bienvenue, {utilisateur['nom_utilisateur']} ! 👋", "success")
+            flash(f"Bienvenue, {utilisateur['nom_utilisateur']} !", "success")
             return redirect(url_for('tableau_de_bord'))
         else:
             flash("Email ou mot de passe incorrect.", "danger")
@@ -329,7 +329,7 @@ def publier_offre():
         )
         conn.commit()
         conn.close()
-        flash("✅ Offre publiée avec succès !", "success")
+        flash("Offre publiée avec succès !", "success")
         return redirect(url_for('tableau_de_bord'))
 
     return render_template('publier_offre.html')
@@ -370,7 +370,7 @@ def modifier_offre(offre_id):
         )
         conn.commit()
         conn.close()
-        flash("✅ Offre modifiée avec succès !", "success")
+        flash("Offre modifiée avec succès !", "success")
         return redirect(url_for('tableau_de_bord'))
 
     conn.close()
@@ -428,7 +428,7 @@ def postuler(offre_id):
             (session['utilisateur_id'], offre_id, lettre)
         )
         conn.commit()
-        flash("✅ Votre candidature a été envoyée avec succès !", "success")
+        flash("Votre candidature a été envoyée avec succès !", "success")
     except sqlite3.IntegrityError:
         # La contrainte UNIQUE(candidat_id, offre_id) a bloqué l'insertion
         flash("Vous avez déjà postulé à cette offre.", "danger")
@@ -460,7 +460,7 @@ def ajouter_cv():
     )
     conn.commit()
     conn.close()
-    flash("✅ Votre profil a été mis à jour !", "success")
+    flash("Votre profil a été mis à jour !", "success")
     return redirect(url_for('tableau_de_bord'))
 
 
@@ -525,7 +525,7 @@ def planifier_entretien(candidature_id):
     )
     conn.commit()
     conn.close()
-    flash("✅ Entretien planifié avec succès !", "success")
+    flash("Entretien planifié avec succès !", "success")
     return redirect(url_for('tableau_de_bord'))
 
 
@@ -543,7 +543,7 @@ def evaluer(entretien_id):
     conn.execute('UPDATE entretiens SET notes = ? WHERE id = ?', (notes, entretien_id))
     conn.commit()
     conn.close()
-    flash("✅ Évaluation sauvegardée !", "success")
+    flash("Évaluation sauvegardée !", "success")
     return redirect(url_for('tableau_de_bord'))
 
 
