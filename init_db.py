@@ -13,26 +13,37 @@ except ImportError as e:
 # ==========================================
 # SCRIPT DE CRÉATION DE LA BASE DE DONNÉES
 # ==========================================
-# Ce fichier crée TOUTES les tables nécessaires pour les 6 sprints du projet.
-# On l'exécute UNE SEULE FOIS au début (ou quand on veut tout réinitialiser).
 
 IS_POSTGRES = 'DATABASE_URL' in os.environ
 
 if IS_POSTGRES:
-    print("Initiating PostgreSQL Database...")
+    print("--- DEPLOYMENT: Initiating PostgreSQL Database ---")
     if not psycopg2:
-        print("Error: psycopg2 is not installed!")
+        print(f"Error: psycopg2 is not installed! ({import_error})")
         sys.exit(1)
-    connexion = psycopg2.connect(os.environ['DATABASE_URL'])
-    curseur = connexion.cursor()
+    try:
+        connexion = psycopg2.connect(os.environ['DATABASE_URL'])
+        connexion.autocommit = True # Ensure commands happen immediately
+        curseur = connexion.cursor()
+        print("--- DEPLOYMENT: Connected to Postgres successfully ---")
+    except Exception as e:
+        print(f"--- DEPLOYMENT ERROR: Could not connect to Postgres: {str(e)} ---")
+        sys.exit(1)
+    
     # PostgreSQL syntax
     TYPE_SERIAL = "SERIAL PRIMARY KEY"
     TYPE_DATETIME_DEFAULT = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
     
-    # Drop existing tables to refresh content
-    curseur.execute("DROP TABLE IF EXISTS entretiens, candidatures, offres, utilisateurs CASCADE;")
+    # Drop existing tables one by one for safety
+    print("--- DEPLOYMENT: Cleaning old tables... ---")
+    for table in ["entretiens", "candidatures", "offres", "utilisateurs"]:
+        try:
+            curseur.execute(f"DROP TABLE IF EXISTS {table} CASCADE;")
+            print(f"    - Table '{table}' dropped (if it existed).")
+        except Exception as e:
+            print(f"    - Note: Could not drop '{table}': {str(e)}")
 else:
-    print("Initiating SQLite Database...")
+    print("--- LOCAL: Initiating SQLite Database ---")
     db_path = os.environ.get('DATABASE_PATH', 'recrutement_simple.db')
     if os.path.exists(db_path):
         os.remove(db_path)
@@ -44,22 +55,34 @@ else:
     TYPE_DATETIME_DEFAULT = "TEXT DEFAULT (datetime('now'))"
 
 def execute(query, params=()):
-    if IS_POSTGRES:
-        curseur.execute(query.replace('?', '%s'), params)
-    else:
-        curseur.execute(query, params)
+    try:
+        if IS_POSTGRES:
+            curseur.execute(query.replace('?', '%s'), params)
+        else:
+            curseur.execute(query, params)
+    except Exception as e:
+        print(f"!!! SQL EXECUTION ERROR: {str(e)}")
+        print(f"Query was: {query}")
+        raise e
 
 def executemany(query, params_list):
-    if IS_POSTGRES:
-        curseur.executemany(query.replace('?', '%s'), params_list)
-    else:
-        curseur.executemany(query, params_list)
+    try:
+        if IS_POSTGRES:
+            curseur.executemany(query.replace('?', '%s'), params_list)
+        else:
+            curseur.executemany(query, params_list)
+    except Exception as e:
+        print(f"!!! SQL EXECUTIONMANY ERROR: {str(e)}")
+        raise e
 
 # ==========================================
-# SPRINT 1 : TABLE DES UTILISATEURS
+# CRÉATION DES TABLES
 # ==========================================
+
+print("--- DEPLOYMENT: Creating tables... ---")
+
 execute(f'''
-CREATE TABLE IF NOT EXISTS utilisateurs (
+CREATE TABLE utilisateurs (
     id              {TYPE_SERIAL},
     nom_utilisateur TEXT NOT NULL UNIQUE,
     email           TEXT NOT NULL UNIQUE,
@@ -70,12 +93,10 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     date_creation   {TYPE_DATETIME_DEFAULT}
 )
 ''')
+print("    [OK] Table 'utilisateurs' created.")
 
-# ==========================================
-# SPRINT 2 : TABLE DES OFFRES D'EMPLOI
-# ==========================================
 execute(f'''
-CREATE TABLE IF NOT EXISTS offres (
+CREATE TABLE offres (
     id              {TYPE_SERIAL},
     titre           TEXT NOT NULL,
     description     TEXT NOT NULL,
@@ -88,12 +109,10 @@ CREATE TABLE IF NOT EXISTS offres (
     FOREIGN KEY(recruteur_id) REFERENCES utilisateurs(id)
 )
 ''')
+print("    [OK] Table 'offres' created.")
 
-# ==========================================
-# SPRINT 3 : TABLE DES CANDIDATURES
-# ==========================================
 execute(f'''
-CREATE TABLE IF NOT EXISTS candidatures (
+CREATE TABLE candidatures (
     id              {TYPE_SERIAL},
     candidat_id     INTEGER NOT NULL,
     offre_id        INTEGER NOT NULL,
@@ -105,12 +124,10 @@ CREATE TABLE IF NOT EXISTS candidatures (
     UNIQUE(candidat_id, offre_id)
 )
 ''')
+print("    [OK] Table 'candidatures' created.")
 
-# ==========================================
-# SPRINT 4 : TABLE DES ENTRETIENS
-# ==========================================
 execute(f'''
-CREATE TABLE IF NOT EXISTS entretiens (
+CREATE TABLE entretiens (
     id              {TYPE_SERIAL},
     candidature_id  INTEGER NOT NULL,
     date_entretien  TEXT NOT NULL,
@@ -120,10 +137,13 @@ CREATE TABLE IF NOT EXISTS entretiens (
     FOREIGN KEY(candidature_id) REFERENCES candidatures(id)
 )
 ''')
+print("    [OK] Table 'entretiens' created.")
 
 # ==========================================
 # DONNÉES DE DÉMONSTRATION (optionnel)
 # ==========================================
+print("--- DEPLOYMENT: Seeding demonstration data... ---")
+
 comptes_test = [
     ('admin',     'admin@nexthire.com',     generate_password_hash('admin123'),     'Admin',     None, None),
     ('rh_marie',  'marie@nexthire.com',     generate_password_hash('rh123'),        'RH',        None, None),
@@ -134,38 +154,36 @@ comptes_test = [
         '0666111222'),
 ]
 
-executemany(
-    'INSERT INTO utilisateurs (nom_utilisateur, email, mot_de_passe, role, profil_cv, telephone) VALUES (?,?,?,?,?,?)',
-    comptes_test
-)
+try:
+    executemany(
+        'INSERT INTO utilisateurs (nom_utilisateur, email, mot_de_passe, role, profil_cv, telephone) VALUES (?,?,?,?,?,?)',
+        comptes_test
+    )
+    
+    # On crée 2 offres de démonstration
+    execute(
+        'INSERT INTO offres (titre, description, localisation, type_contrat, salaire, recruteur_id) VALUES (?,?,?,?,?,?)',
+        ('Développeur Python Junior',
+         'Nous recherchons un développeur Python passionné pour rejoindre notre équipe agile. '
+         'Vous travaillerez sur des projets Flask/Django. Connaissance de SQLite ou MySQL appréciée.',
+         'Casablanca', 'CDI', '8 000 - 12 000 MAD/mois', 3)
+    )
+    execute(
+        'INSERT INTO offres (titre, description, localisation, type_contrat, salaire, recruteur_id) VALUES (?,?,?,?,?,?)',
+        ('Analyste RH - Gestion des talents',
+         'Poste d\'analyse RH pour accompagner nos processus de recrutement et de formation. '
+         'Bonne maîtrise d\'Excel et des outils RH. Expérience minimum 1 an souhaitée.',
+         'Rabat', 'CDI', '7 000 - 9 000 MAD/mois', 3)
+    )
+    print("    [OK] Seed data inserted.")
+except Exception as e:
+    print(f"!!! SEEDING ERROR: {str(e)} (Tables are still created though!)")
 
-# On crée 2 offres de démonstration
-execute(
-    'INSERT INTO offres (titre, description, localisation, type_contrat, salaire, recruteur_id) VALUES (?,?,?,?,?,?)',
-    ('Développeur Python Junior',
-     'Nous recherchons un développeur Python passionné pour rejoindre notre équipe agile. '
-     'Vous travaillerez sur des projets Flask/Django. Connaissance de SQLite ou MySQL appréciée.',
-     'Casablanca', 'CDI', '8 000 - 12 000 MAD/mois', 3)
-)
-execute(
-    'INSERT INTO offres (titre, description, localisation, type_contrat, salaire, recruteur_id) VALUES (?,?,?,?,?,?)',
-    ('Analyste RH - Gestion des talents',
-     'Poste d\'analyste RH pour accompagner nos processus de recrutement et de formation. '
-     'Bonne maîtrise d\'Excel et des outils RH. Expérience minimum 1 an souhaitée.',
-     'Rabat', 'CDI', '7 000 - 9 000 MAD/mois', 3)
-)
-
-# On valide tout et on ferme
-connexion.commit()
+# On ferme
+if not IS_POSTGRES:
+    connexion.commit()
 connexion.close()
 
 print("=" * 50)
-print("Base de donnees creee avec succes !")
-print("   Tables : utilisateurs, offres, candidatures, entretiens")
-print()
-print("--- Comptes de demonstration ---")
-print("  Admin     : admin@nexthire.com       / admin123")
-print("  RH        : marie@nexthire.com       / rh123")
-print("  Recruteur : recruteur@nexthire.com   / recruteur123")
-print("  Candidat  : alice@email.com          / alice123")
+print("BASE DE DONNEES INITIALISEE !")
 print("=" * 50)
