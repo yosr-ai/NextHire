@@ -581,12 +581,12 @@ def tableau_de_bord():
 
         # Récupérer toutes ses candidatures avec le titre de l'offre
         donnees['candidatures'] = conn.execute(
-            '''SELECT candidatures.*, offres.titre as offre_titre, offres.localisation,
-                      offres.type_contrat, offres.recruteur_id
-               FROM candidatures
-               JOIN offres ON candidatures.offre_id = offres.id
-               WHERE candidatures.candidat_id = ?
-               ORDER BY candidatures.date_postulation DESC''',
+            '''SELECT c.id, c.offre_id, c.date_postulation, c.statut, 
+                      o.titre as offre_titre, o.localisation, o.type_contrat
+               FROM candidatures c
+               JOIN offres o ON c.offre_id = o.id
+               WHERE c.candidat_id = ?
+               ORDER BY c.date_postulation DESC''',
             (uid,)
         ).fetchall()
 
@@ -601,12 +601,12 @@ def tableau_de_bord():
 
         # Récupérer ses entretiens planifiés
         donnees['entretiens'] = conn.execute(
-            '''SELECT entretiens.*, offres.titre as offre_titre
-               FROM entretiens
-               JOIN candidatures ON entretiens.candidature_id = candidatures.id
-               JOIN offres ON candidatures.offre_id = offres.id
-               WHERE candidatures.candidat_id = ?
-               ORDER BY entretiens.date_entretien ASC''',
+            '''SELECT e.id, e.date_entretien, e.lieu, e.notes, o.titre as offre_titre
+               FROM entretiens e
+               JOIN candidatures c ON e.candidature_id = c.id
+               JOIN offres o ON c.offre_id = o.id
+               WHERE c.candidat_id = ?
+               ORDER BY e.date_entretien ASC''',
             (uid,)
         ).fetchall()
 
@@ -622,14 +622,14 @@ def tableau_de_bord():
 
         # Toutes les candidatures pour ses offres, avec infos candidat
         donnees['candidatures'] = conn.execute(
-            '''SELECT candidatures.*, utilisateurs.nom_utilisateur as candidat_nom,
-                      utilisateurs.email as candidat_email, utilisateurs.telephone,
-                      utilisateurs.profil_cv, offres.titre as offre_titre, offres.id as offre_id
-               FROM candidatures
-               JOIN utilisateurs ON candidatures.candidat_id = utilisateurs.id
-               JOIN offres ON candidatures.offre_id = offres.id
-               WHERE offres.recruteur_id = ?
-               ORDER BY candidatures.date_postulation DESC''',
+            '''SELECT c.id, c.statut, c.date_postulation, 
+                      u.nom_utilisateur as candidat_nom, u.email as candidat_email, 
+                      u.telephone, u.profil_cv, o.titre as offre_titre, o.id as offre_id
+               FROM candidatures c
+               JOIN utilisateurs u ON c.candidat_id = u.id
+               JOIN offres o ON c.offre_id = o.id
+               WHERE o.recruteur_id = ?
+               ORDER BY c.date_postulation DESC''',
             (uid,)
         ).fetchall()
 
