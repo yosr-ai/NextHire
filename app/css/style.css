@@ -757,7 +757,7 @@ h1, h2, h3, h4, h5, h6, .logo {
    ========================================= */
 .toast-container {
     position: fixed;
-    top: 2rem;
+    top: 5.5rem;
     right: 2rem;
     z-index: 9999;
     display: flex;
