@@ -5,8 +5,10 @@ from werkzeug.security import generate_password_hash
 
 try:
     import psycopg2
-except ImportError:
+    import_error = None
+except ImportError as e:
     psycopg2 = None
+    import_error = str(e)
 
 # ==========================================
 # SCRIPT DE CRÉATION DE LA BASE DE DONNÉES
@@ -56,7 +58,7 @@ def executemany(query, params_list):
 # ==========================================
 # SPRINT 1 : TABLE DES UTILISATEURS
 # ==========================================
-execute(f'''
+execute(f'''it
 CREATE TABLE IF NOT EXISTS utilisateurs (
     id              {TYPE_SERIAL},
     nom_utilisateur TEXT NOT NULL UNIQUE,

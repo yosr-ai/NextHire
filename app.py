@@ -38,7 +38,7 @@ class DBConnection:
     def __init__(self):
         if IS_POSTGRES:
             if not psycopg2:
-                raise RuntimeError(f"psycopg2-binary is not installed or failed to load: {import_error}")
+                raise RuntimeError(f"psycopg2 is not installed or failed to load: {import_error}")
             try:
                 # Log connection attempt
                 print("--- Database: Attempting to connect to PostgreSQL... ---")
