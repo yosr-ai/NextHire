@@ -74,84 +74,117 @@
 
     <!-- ================================================================ -->
     <!-- SECTION CANDIDAT                                                  -->
+    <!-- ==============================    <!-- ================================================================ -->
+    <!-- SECTION CANDIDAT : CENTRE DE CARRIÈRE PERSONNEL                   -->
     <!-- ================================================================ -->
     {% if role == 'Candidat' %}
 
-        <!-- Mon Profil / CV -->
-        <div class="content-panel" style="margin-bottom:2rem;">
-            <h3>👤 Mon Profil & CV</h3>
-            <p style="color:var(--text-muted); margin-bottom:1.5rem;">
-                Ce texte représente votre CV sur la plateforme. Rédigez vos compétences, formations et expériences.
-            </p>
-            <!--
-                SPRINT 3 : Mise à jour du profil
-                action="/ajouter_cv" → route Flask qui met à jour la base de données
-            -->
-            <form method="POST" action="{{ url_for('ajouter_cv') }}">
-                <div class="form-group">
-                    <label class="form-control-label">Téléphone</label>
-                    <input type="tel" name="telephone" class="form-control"
-                           placeholder="Ex : 0600000000"
-                           value="{{ donnees.telephone }}">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start;">
+            
+            <!-- COLONNE GAUCHE : SUIVI DES CANDIDATURES -->
+            <div class="main-column">
+                <div class="content-panel">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <h3>📨 Mes Candidatures</h3>
+                        <a href="{{ url_for('liste_offres') }}" style="font-size: 0.9rem; font-weight: 600; color: var(--primary);">Voir plus d'offres →</a>
+                    </div>
+
+                    {% if donnees.candidatures %}
+                        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                            {% for c in donnees.candidatures %}
+                                <div class="candidature-progress-card" style="background: var(--bg-input); border-radius: var(--border-radius-md); padding: 1.5rem; border: 1px solid var(--border-light); transition: var(--transition);">
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                                        <div>
+                                            <h4 style="font-size: 1.1rem; margin-bottom: 0.25rem;">{{ c.offre_titre }}</h4>
+                                            <span style="font-size: 0.85rem; color: var(--text-muted);">📍 {{ c.localisation or 'Lieu non précisé' }} · {{ c.type_contrat or '—' }}</span>
+                                        </div>
+                                        <span class="badge-statut badge-{{ c.statut | lower | replace(' ','_') }}">
+                                            {{ c.statut }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Barre de progression visuelle -->
+                                    <div class="progress-tracker" style="display: flex; justify-content: space-between; position: relative; padding: 0 10px;">
+                                        <div style="position: absolute; top: 10px; left: 10px; right: 10px; height: 2px; background: #e2e8f0; z-index: 1;"></div>
+                                        <div style="position: absolute; top: 10px; left: 10px; height: 2px; background: var(--primary); z-index: 2; width: 
+                                            {% if c.statut == 'En attente' %}10%
+                                            {% elif c.statut == 'Entretien planifié' %}50%
+                                            {% elif c.statut in ['Accepté', 'Refusé'] %}100%
+                                            {% else %}0%{% endif %}; transition: width 1s ease;">
+                                        </div>
+
+                                        <div style="z-index: 3; text-align: center;">
+                                            <div style="width: 22px; height: 22px; background: var(--primary); border-radius: 50%; margin: 0 auto 5px; border: 4px solid #fff; box-shadow: 0 0 0 2px var(--primary);"></div>
+                                            <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-main);">Postulé</span>
+                                        </div>
+                                        <div style="z-index: 3; text-align: center;">
+                                            <div style="width: 22px; height: 22px; background: {% if c.statut in ['Entretien planifié', 'Accepté', 'Refusé'] %}var(--primary){% else %}#e2e8f0{% endif %}; border-radius: 50%; margin: 0 auto 5px; border: 4px solid #fff; box-shadow: 0 0 0 2px {% if c.statut in ['Entretien planifié', 'Accepté', 'Refusé'] %}var(--primary){% else %}#e2e8f0{% endif %};"></div>
+                                            <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Entretien</span>
+                                        </div>
+                                        <div style="z-index: 3; text-align: center;">
+                                            <div style="width: 22px; height: 22px; background: {% if c.statut in ['Accepté', 'Refusé'] %}var(--primary){% else %}#e2e8f0{% endif %}; border-radius: 50%; margin: 0 auto 5px; border: 4px solid #fff; box-shadow: 0 0 0 2px {% if c.statut in ['Accepté', 'Refusé'] %}var(--primary){% else %}#e2e8f0{% endif %};"></div>
+                                            <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">Décision</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+                                        <a href="{{ url_for('detail_offre', offre_id=c.offre_id) }}" style="font-size: 0.85rem; font-weight: 600; color: var(--primary); text-decoration: none;">Voir l'annonce originale →</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <div style="font-size: 3rem;">🌟</div>
+                            <h4>Commencez votre aventure</h4>
+                            <p>Explorez nos opportunités et trouvez le poste qui vous ressemble.</p>
+                            <a href="{{ url_for('liste_offres') }}" class="btn btn-primary" style="margin-top: 1rem;">Parcourir les offres</a>
+                        </div>
+                    {% endif %}
                 </div>
-                <div class="form-group">
-                    <label class="form-control-label">Mon CV / Ma présentation</label>
-                    <!--
-                        {{ donnees.profil_cv }} : affiche le texte déjà sauvegardé
-                        (s'il est vide, le textarea sera vide aussi)
-                    -->
-                    <textarea name="cv_texte" rows="7" class="form-control"
-                              placeholder="Ex : Je suis étudiant(e) en informatique...&#10;Compétences : Python, HTML, CSS...&#10;Expérience : Stage chez XYZ...">{{ donnees.profil_cv }}</textarea>
+            </div>
+
+            <!-- COLONNE DROITE : ENTRETIENS ET PROFIL -->
+            <div class="sidebar-column">
+                
+                <!-- PROCHAINS ENTRETIENS -->
+                <div class="content-panel" style="margin-bottom: 2rem; border-top: 4px solid var(--primary);">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">📅 Entretiens à venir</h3>
+                    {% if donnees.entretiens %}
+                        <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            {% for e in donnees.entretiens %}
+                                <div style="background: var(--bg-body); padding: 1rem; border-radius: var(--border-radius-sm); border-left: 3px solid var(--primary);">
+                                    <h4 style="font-size: 0.95rem; margin-bottom: 0.25rem;">{{ e.offre_titre }}</h4>
+                                    <div style="font-size: 0.85rem; color: var(--text-main); font-weight: 600; margin-bottom: 0.25rem;">🕒 {{ e.date_entretien }}</div>
+                                    <div style="font-size: 0.8rem; color: var(--text-muted);">📍 {{ e.lieu or 'Lieu communiqué bientôt' }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p style="font-size: 0.9rem; color: var(--text-muted); font-style: italic;">Aucun entretien planifié pour le moment.</p>
+                    {% endif %}
                 </div>
-                <button type="submit" class="btn btn-primary">💾 Mettre à jour mon profil</button>
-            </form>
+
+                <!-- MON PROFIL CV -->
+                <div class="content-panel">
+                    <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">👤 Mon Profil</h3>
+                    <form method="POST" action="{{ url_for('ajouter_cv') }}">
+                        <div class="form-group">
+                            <label class="form-control-label" style="font-size: 0.8rem;">Téléphone</label>
+                            <input type="tel" name="telephone" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.9rem;"
+                                   placeholder="0600000000" value="{{ donnees.telephone }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-control-label" style="font-size: 0.8rem;">Mon CV / Présentation</label>
+                            <textarea name="cv_texte" rows="5" class="form-control" style="padding: 0.5rem 0.75rem; font-size: 0.9rem; line-height: 1.4;"
+                                      placeholder="Résumez votre parcours...">{{ donnees.profil_cv }}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block" style="padding: 0.6rem; font-size: 0.85rem;">Enregistrer</button>
+                    </form>
+                </div>
+
+            </div>
         </div>
-
-        <!-- Mes Candidatures -->
-        <div class="content-panel">
-            <h3>📨 Mes Candidatures</h3>
-
-            {% if donnees.candidatures %}
-                <div class="table-wrapper" style="margin-top:1.5rem;">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Offre</th>
-                                <th>Localisation</th>
-                                <th>Type</th>
-                                <th>Date</th>
-                                <th>Statut</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for c in donnees.candidatures %}
-                            <tr>
-                                <td><strong>{{ c.offre_titre }}</strong></td>
-                                <td>{{ c.localisation or '—' }}</td>
-                                <td>{{ c.type_contrat or '—' }}</td>
-                                <td>{{ c.date_postulation|date_short }}</td>
-                                <td>
-                                    <!-- Badge coloré selon le statut -->
-                                    <span class="badge-statut badge-{{ c.statut | lower | replace(' ','_') }}">
-                                        {% if c.statut == 'Accepté' %}✅
-                                        {% elif c.statut == 'Refusé' %}❌
-                                        {% elif c.statut == 'Entretien planifié' %}📅
-                                        {% else %}⏳
-                                        {% endif %}
-                                        {{ c.statut }}
-                                    </span>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            {% else %}
-                <div class="empty-state" style="padding:2rem;">
-                    <div style="font-size:3rem;">📭</div>
-                    <h4>Aucune candidature pour l'instant</h4>
-                    <a href="{{ url_for('liste_offres') }}" class="btn btn-primary" style="margin-top:1rem;">
-                        Parcourir les offres →
                     </a>
                 </div>
             {% endif %}

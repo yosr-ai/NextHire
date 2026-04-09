@@ -599,6 +599,17 @@ def tableau_de_bord():
             'entretien':   sum(1 for c in donnees['candidatures'] if c['statut'] == 'Entretien planifié'),
         }
 
+        # Récupérer ses entretiens planifiés
+        donnees['entretiens'] = conn.execute(
+            '''SELECT entretiens.*, offres.titre as offre_titre
+               FROM entretiens
+               JOIN candidatures ON entretiens.candidature_id = candidatures.id
+               JOIN offres ON candidatures.offre_id = offres.id
+               WHERE candidatures.candidat_id = ?
+               ORDER BY entretiens.date_entretien ASC''',
+            (uid,)
+        ).fetchall()
+
     # -------------------------------------------------------
     # RECRUTEUR : Mes offres + Candidatures reçues + Entretiens
     # -------------------------------------------------------
