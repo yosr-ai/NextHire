@@ -46,22 +46,27 @@
         </div>
     </header>
 
-    <!-- ===================== CONTENU PRINCIPAL ===================== -->
-    <main class="container content-overlay">
+    <!-- ===================== NOTIFICATIONS (TOASTS) ===================== -->
+    <div class="toast-container">
         {# Affiche les messages flash (succès, erreur, info) #}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-messages">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">
-                            {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'info' %}ℹ️{% endif %}
-                            {{ message }}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <div class="alert-icon">
+                            {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'info' %}ℹ️{% else %}⚠️{% endif %}
                         </div>
-                    {% endfor %}
-                </div>
+                        <div class="alert-content">
+                            <span class="alert-message">{{ message }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
             {% endif %}
         {% endwith %}
+    </div>
 
+    <!-- ===================== CONTENU PRINCIPAL ===================== -->
+    <main class="container content-overlay">
         {# Chaque page remplace ce bloc par son propre contenu #}
         {% block content %}{% endblock %}
     </main>
@@ -73,6 +78,25 @@
             <p style="color: var(--text-muted); font-size: 0.9rem;">© 2026 <strong>NextHire</strong> — Solution de Recrutement Innovante</p>
         </div>
     </footer>
+
+    <!-- Script pour l'animation de sortie des notifications -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                // On attend 5 secondes avant de faire disparaître la notification
+                setTimeout(() => {
+                    alert.classList.add('hiding');
+                    // On attend la fin de l'animation CSS (0.6s) avant de retirer du DOM
+                    alert.addEventListener('animationend', (e) => {
+                        if (e.animationName === 'toastSlideOut') {
+                            alert.remove();
+                        }
+                    });
+                }, 5000);
+            });
+        });
+    </script>
 
 </body>
 </html>
