@@ -68,6 +68,16 @@
     {% endif %}
     {% endif %}
 
+    <!-- ===== ÉVOLUTION DES CANDIDATURES DANS LE TEMPS ===== -->
+    {% if stats.evolution_candidatures %}
+    <div class="content-panel" style="margin-bottom:2rem;">
+        <h3>📈 Évolution des Candidatures</h3>
+        <div style="margin-top:1.5rem; width:100%; max-width:800px; margin-left:auto; margin-right:auto;">
+            <canvas id="evolutionChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- ===== RÉPARTITION DES CANDIDATURES PAR STATUT ===== -->
     {% if stats.par_statut %}
     <div class="content-panel" style="margin-bottom:2rem;">
@@ -176,4 +186,49 @@
     {% endif %}
 
 </div>
+
+{% if stats.evolution_candidatures %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const evolutionData = {{ stats.evolution_candidatures | tojson | safe }};
+        const labels = evolutionData.map(item => item.jour);
+        const data = evolutionData.map(item => item.nb);
+
+        const ctx = document.getElementById('evolutionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Nouvelles candidatures',
+                    data: data,
+                    borderColor: '#c2a893',
+                    backgroundColor: 'rgba(194, 168, 147, 0.2)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true,
+                    pointBackgroundColor: '#c2a893',
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+
 {% endblock %}

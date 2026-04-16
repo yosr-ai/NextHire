@@ -759,6 +759,17 @@ def statistiques():
             'refuse':        conn.execute("SELECT COUNT(*) FROM candidatures WHERE statut='Refusé'").fetchone()[0],
         }
 
+        # Evolution des candidatures dans le temps
+        evolution_rows = conn.execute(
+            '''SELECT DATE(date_postulation) as jour, COUNT(*) as nb 
+               FROM candidatures 
+               GROUP BY jour 
+               ORDER BY jour ASC
+               LIMIT 30'''
+        ).fetchall()
+        stats['evolution_candidatures'] = [dict(row) for row in evolution_rows]
+
+
     conn.close()
     return render_template('statistiques.html', stats=stats, role=role)
 
