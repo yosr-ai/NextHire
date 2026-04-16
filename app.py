@@ -795,10 +795,30 @@ def supprimer_user(user_id):
         return redirect(url_for('tableau_de_bord'))
 
     conn = get_db_connection()
-    conn.execute('DELETE FROM utilisateurs WHERE id = ?', (user_id,))
-    conn.commit()
-    conn.close()
-    flash("Utilisateur supprimé.", "info")
+    try:
+        # Supprimer les entretiens liés aux candidatures du candidat
+        conn.execute('DELETE FROM entretiens WHERE candidature_id IN (SELECT id FROM candidatures WHERE candidat_id = ?)', (user_id,))
+        # Supprimer les candidatures du candidat
+        conn.execute('DELETE FROM candidatures WHERE candidat_id = ?', (user_id,))
+        
+        # S'il est recruteur : supprimer les entretiens liés à ses offres
+        conn.execute('DELETE FROM entretiens WHERE candidature_id IN (SELECT id FROM candidatures WHERE offre_id IN (SELECT id FROM offres WHERE recruteur_id = ?))', (user_id,))
+        # S'il est recruteur : supprimer les candidatures sur ses offres
+        conn.execute('DELETE FROM candidatures WHERE offre_id IN (SELECT id FROM offres WHERE recruteur_id = ?)', (user_id,))
+        # Supprimer ses offres
+        conn.execute('DELETE FROM offres WHERE recruteur_id = ?', (user_id,))
+        
+        # Enfin, supprimer l'utilisateur
+        conn.execute('DELETE FROM utilisateurs WHERE id = ?', (user_id,))
+        
+        conn.commit()
+        flash("Utilisateur supprimé avec succès.", "info")
+    except Exception as e:
+        print(f"Erreur de suppression : {e}")
+        flash("Un problème est survenu lors de la suppression (Dépendances).", "danger")
+    finally:
+        conn.close()
+
     return redirect(url_for('tableau_de_bord'))
 
 
